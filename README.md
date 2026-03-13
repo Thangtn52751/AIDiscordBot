@@ -1,0 +1,2 @@
+# AIDiscordBot
+And discord bot 
