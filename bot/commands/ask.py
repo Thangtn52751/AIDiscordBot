@@ -1,23 +1,37 @@
+import asyncio
+import discord
+from discord import app_commands
 from discord.ext import commands
+
 from ai.llm_client import ask_ai
-from bot.user_context import build_user_context, load_user_profiles
+from bot.user_context import build_user_context
 
-
-USER_PROFILES = load_user_profiles()
 
 class Ask(commands.Cog):
-
-    def __init__(self, bot, personality):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.personality = personality
 
-    @commands.command()
-    async def ask(self, ctx, *, question):
-        user_context = build_user_context(ctx.author, USER_PROFILES)
+    @app_commands.command(
+        name="ask",
+        description="Hoi Bo Beo mot cau va nhan cau tra loi ca khia."
+    )
+    @app_commands.describe(question="Cau hoi hoac yeu cau ban muon Bo Beo tra loi")
+    async def ask(self, interaction: discord.Interaction, question: str) -> None:
+        await interaction.response.defer(thinking=True)
 
-        response = ask_ai(self.personality, question, user_context)
+        user_context = build_user_context(
+            interaction.user,
+            getattr(self.bot, "user_profiles", {})
+        )
+        response = await asyncio.to_thread(
+            ask_ai,
+            getattr(self.bot, "personality", ""),
+            question,
+            user_context
+        )
 
-        await ctx.send(response)
+        await interaction.followup.send(response)
 
-def setup(bot, personality):
-    bot.add_cog(Ask(bot, personality))
+
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Ask(bot))

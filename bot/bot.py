@@ -13,12 +13,17 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 with open("data/personality.txt", "r", encoding="utf-8") as f:
     personality = f.read()
-user_profiles = load_user_profiles()
+bot.personality = personality
+bot.user_profiles = load_user_profiles()
+bot.commands_loaded = False
 
 
 @bot.event
 async def on_ready():
-    await load_commands(bot)
+    if not bot.commands_loaded:
+        await load_commands(bot)
+        bot.commands_loaded = True
+    await bot.tree.sync()
     print(f"Bot logged in as {bot.user}")
 
 @bot.event
@@ -30,7 +35,7 @@ async def on_message(message):
     if bot.user in message.mentions:
 
         content = message.content.replace(f"<@{bot.user.id}>", "").strip()
-        user_context = build_user_context(message.author, user_profiles)
+        user_context = build_user_context(message.author, bot.user_profiles)
 
         try:
 
@@ -68,5 +73,5 @@ async def on_message(message):
 async def load_commands(bot):
 
     for filename in os.listdir("./bot/commands"):
-        if filename.endswith(".py"):
+        if filename.endswith(".py") and filename != "__init__.py":
             await bot.load_extension(f"bot.commands.{filename[:-3]}")
