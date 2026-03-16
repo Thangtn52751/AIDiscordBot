@@ -25,7 +25,17 @@ def _build_discord_context(user_context: Mapping[str, Any] | None) -> str | None
         f"- roast_nickname: {user_context.get('roast_nickname', '') or 'none'}",
         f"- roast_profile: {user_context.get('roast_profile', '') or 'none'}",
         f"- extra_instructions: {user_context.get('extra_instructions', '') or 'none'}",
+        f"- has_target: {user_context.get('has_target', 'false')}",
+        f"- target_user_id: {user_context.get('target_user_id', '') or 'none'}",
+        f"- target_username: {user_context.get('target_username', '') or 'none'}",
+        f"- target_display_name: {user_context.get('target_display_name', '') or 'none'}",
+        f"- target_mention: {user_context.get('target_mention', '') or 'none'}",
+        f"- target_roast_nickname: {user_context.get('target_roast_nickname', '') or 'none'}",
+        f"- target_roast_profile: {user_context.get('target_roast_profile', '') or 'none'}",
+        f"- target_extra_instructions: {user_context.get('target_extra_instructions', '') or 'none'}",
         "Use this only to personalize the reply naturally and playfully.",
+        "If has_target is true, direct the playful roast primarily at the target user instead of the requester.",
+        "If target_roast_nickname or target_roast_profile is present, prioritize it for the target.",
         "If roast_nickname or roast_profile is present, prioritize it when teasing this user.",
         "Do not invent private information beyond these fields."
     ]

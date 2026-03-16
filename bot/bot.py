@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from ai.llm_client import ask_ai
 import asyncio
 from ai.llm_client import ask_ai_with_image
-from bot.user_context import build_user_context, load_user_profiles
+from bot.user_context import build_message_context, load_user_profiles
 import os
 
 load_dotenv()
@@ -79,7 +79,12 @@ async def on_message(message):
     if bot.user in message.mentions:
 
         content = message.content.replace(f"<@{bot.user.id}>", "").strip()
-        user_context = build_user_context(message.author, bot.user_profiles)
+        user_context = build_message_context(
+            message.author,
+            list(message.mentions),
+            bot.user,
+            bot.user_profiles
+        )
 
         try:
 

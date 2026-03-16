@@ -47,3 +47,39 @@ def build_user_context(
         "roast_profile": profile.get("roast_profile", ""),
         "extra_instructions": profile.get("extra_instructions", "")
     }
+
+
+def build_message_context(
+    author: Any,
+    mentions: list[Any] | None = None,
+    bot_user: Any | None = None,
+    user_profiles: dict[str, dict[str, str]] | None = None
+) -> dict[str, str]:
+    context = build_user_context(author, user_profiles)
+    mentions = mentions or []
+
+    targets = [
+        member for member in mentions
+        if getattr(member, "id", None) != getattr(author, "id", None)
+        and getattr(member, "id", None) != getattr(bot_user, "id", None)
+        and not getattr(member, "bot", False)
+    ]
+
+    if not targets:
+        return context
+
+    target = targets[0]
+    target_context = build_user_context(target, user_profiles)
+    context.update(
+        {
+            "target_user_id": target_context["user_id"],
+            "target_username": target_context["username"],
+            "target_display_name": target_context["display_name"],
+            "target_mention": target_context["mention"],
+            "target_roast_nickname": target_context["roast_nickname"],
+            "target_roast_profile": target_context["roast_profile"],
+            "target_extra_instructions": target_context["extra_instructions"],
+            "has_target": "true"
+        }
+    )
+    return context
