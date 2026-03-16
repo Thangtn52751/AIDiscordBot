@@ -4,6 +4,7 @@ from ai.llm_client import ask_ai
 import asyncio
 from ai.llm_client import ask_ai_with_image
 from bot.user_context import build_user_context, load_user_profiles
+import os
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -17,8 +18,8 @@ user_profiles = load_user_profiles()
 
 @bot.event
 async def on_ready():
+    await load_commands(bot)
     print(f"Bot logged in as {bot.user}")
-
 
 @bot.event
 async def on_message(message):
@@ -63,3 +64,9 @@ async def on_message(message):
             await message.channel.send("AI error occurred.")
 
     await bot.process_commands(message)
+
+async def load_commands(bot):
+
+    for filename in os.listdir("./bot/commands"):
+        if filename.endswith(".py"):
+            await bot.load_extension(f"bot.commands.{filename[:-3]}")
