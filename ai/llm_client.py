@@ -33,15 +33,15 @@ def _build_discord_context(user_context: Mapping[str, Any] | None) -> str | None
 
 
 def _build_image_instruction(message: str) -> str:
-    user_message = message.strip() or "Xem nhanh anh nay roi tra loi ngan gon."
+    user_message = message.strip() or "Xem nhanh ảnh này rồi trả lời ngắn gọn."
     lines = [
-        "Nhiem vu voi anh:",
-        "- Chi mo ta nhung gi thay ro trong anh.",
-        "- Tra loi ngan gon, tu nhien, dung tone cua nhan vat.",
-        "- Khong phan tich chuyen sau, khong suy dien qua da.",
-        "- Khong doan nghe nghiep, benh ly, y do hay boi canh neu anh khong cho thay ro.",
-        "- Neu user hoi mot diem cu the trong anh, thi tap trung vao diem do.",
-        f"Yeu cau cua user: {user_message}"
+        "Nhiệm vụ:",
+        "- Khịa những thứ trong ảnh.",
+        "- Trả lời ngắn gọn, đúng tone của nhân vật.",
+        "- Không phân tích chuyên sâu, phân tích ngắn gọn.",
+        "- Nếu user hỏi đoán nghề nghiệp, tập trung vào quần áo, dụng cụ và môi trường xung quanh để đưa ra phán đoán không đảm bảo",
+        "- Nếu user hỏi 1 địa điểm trong ảnh, hãy tập trung phân tích ảnh và đưa ra phán đoán về địa điểm.",
+        f"Yêu cầu của user: {user_message}"
     ]
     return "\n".join(lines)
 
