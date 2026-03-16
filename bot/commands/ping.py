@@ -9,11 +9,31 @@ class Ping(commands.Cog):
 
     @app_commands.command(
         name="ping",
-        description="Kiem tra do tre hien tai cua bot."
+        description="Kiểm tra độ trễ của bot."
     )
     async def ping(self, interaction: discord.Interaction) -> None:
         latency = round(self.bot.latency * 1000)
-        await interaction.response.send_message(f"Pong! {latency}ms")
+
+        embed = discord.Embed(
+            title="🏓 Pong!",
+            description=f"Độ trễ của bot: **{latency}ms**",
+            color=discord.Color.green()
+        )
+
+        embed.add_field(
+            name="📡 Kết nối",
+            value="Bot đang hoạt động bình thường.",
+            inline=False
+        )
+
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+
+        embed.set_footer(
+            text=f"Yêu cầu bởi {interaction.user}",
+            icon_url=interaction.user.display_avatar.url
+        )
+
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:

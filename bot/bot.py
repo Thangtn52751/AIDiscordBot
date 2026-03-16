@@ -1,30 +1,74 @@
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 from ai.llm_client import ask_ai
 import asyncio
 from ai.llm_client import ask_ai_with_image
 from bot.user_context import build_user_context, load_user_profiles
 import os
 
+load_dotenv()
+
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
 
-with open("data/personality.txt", "r", encoding="utf-8") as f:
-    personality = f.read()
-bot.personality = personality
-bot.user_profiles = load_user_profiles()
-bot.commands_loaded = False
+class BoBeoBot(commands.Bot):
+    def __init__(self) -> None:
+        super().__init__(command_prefix="!", intents=intents)
+        with open("data/personality.txt", "r", encoding="utf-8") as f:
+            self.personality = f.read()
+        self.user_profiles = load_user_profiles()
+        self.guild_id = os.getenv("DISCORD_GUILD_ID")
+
+    async def setup_hook(self) -> None:
+        if self.guild_id:
+            guild = discord.Object(id=int(self.guild_id))
+            self.tree.clear_commands(guild=None)
+            cleared = await self.tree.sync()
+            print(f"Cleared {len(cleared)} global slash commands")
+
+            self.tree.clear_commands(guild=guild)
+            cleared_guild = await self.tree.sync(guild=guild)
+            print(f"Cleared {len(cleared_guild)} guild slash commands from {self.guild_id}")
+
+            await load_commands(self)
+            self.tree.copy_global_to(guild=guild)
+            synced = await self.tree.sync(guild=guild)
+            print(f"Synced {len(synced)} guild slash commands to {self.guild_id}: {[cmd.name for cmd in synced]}")
+        else:
+            await load_commands(self)
+            synced = await self.tree.sync()
+            print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
+
+    def get_invite_url(self) -> str | None:
+        client_id = self.application_id or (self.user.id if self.user else None)
+        if not client_id:
+            return None
+
+        permissions = discord.Permissions(
+            view_channel=True,
+            send_messages=True,
+            embed_links=True,
+            attach_files=True,
+            read_message_history=True
+        )
+        return discord.utils.oauth_url(
+            client_id,
+            permissions=permissions,
+            scopes=("bot", "applications.commands")
+        )
+
+
+bot = BoBeoBot()
 
 
 @bot.event
 async def on_ready():
-    if not bot.commands_loaded:
-        await load_commands(bot)
-        bot.commands_loaded = True
-    await bot.tree.sync()
     print(f"Bot logged in as {bot.user}")
+    invite_url = bot.get_invite_url()
+    if invite_url:
+        print(f"Invite URL: {invite_url}")
 
 @bot.event
 async def on_message(message):
@@ -48,7 +92,7 @@ async def on_message(message):
 
                     response = await asyncio.to_thread(
                         ask_ai_with_image,
-                        personality,
+                        bot.personality,
                         content,
                         image_url,
                         user_context
@@ -57,7 +101,7 @@ async def on_message(message):
                 else:
                     response = await asyncio.to_thread(
                         ask_ai,
-                        personality,
+                        bot.personality,
                         content,
                         user_context
                     )
