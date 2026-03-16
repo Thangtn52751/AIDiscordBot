@@ -12,7 +12,6 @@ class Ask(commands.Cog):
         self.personality = personality
 
     @commands.command()
-    @commands.cooldown(3, 10, commands.BucketType.user)
     async def ask(self, ctx, *, question):
         user_context = build_user_context(ctx.author, USER_PROFILES)
 

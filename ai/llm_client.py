@@ -32,6 +32,20 @@ def _build_discord_context(user_context: Mapping[str, Any] | None) -> str | None
     return "\n".join(lines)
 
 
+def _build_image_instruction(message: str) -> str:
+    user_message = message.strip() or "Xem nhanh anh nay roi tra loi ngan gon."
+    lines = [
+        "Nhiem vu voi anh:",
+        "- Chi mo ta nhung gi thay ro trong anh.",
+        "- Tra loi ngan gon, tu nhien, dung tone cua nhan vat.",
+        "- Khong phan tich chuyen sau, khong suy dien qua da.",
+        "- Khong doan nghe nghiep, benh ly, y do hay boi canh neu anh khong cho thay ro.",
+        "- Neu user hoi mot diem cu the trong anh, thi tap trung vao diem do.",
+        f"Yeu cau cua user: {user_message}"
+    ]
+    return "\n".join(lines)
+
+
 def ask_ai(
     personality: str,
     message: str,
@@ -103,11 +117,17 @@ def ask_ai_with_image(
             )
         messages.append(
             {
+                "role": "system",
+                "content": _build_image_instruction(message)
+            }
+        )
+        messages.append(
+            {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": message
+                        "text": message.strip() or "Xem nhanh anh nay."
                     },
                     {
                         "type": "image_url",
@@ -122,7 +142,8 @@ def ask_ai_with_image(
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            max_tokens=500
+            max_tokens=250,
+            temperature=0.6
         )
 
         return response.choices[0].message.content
