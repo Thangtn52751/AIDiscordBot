@@ -9,7 +9,7 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Xem danh sach lenh slash hien co cua bot."
+        description="Xem danh sách lệnh"
     )
     async def help_command(self, interaction: discord.Interaction) -> None:
         embed = discord.Embed(
@@ -38,7 +38,14 @@ class HelpCommand(commands.Cog):
 
         embed.add_field(
             name="🎲 Giải trí",
-            value="`/roll` - Tung xúc xắc ngẫu nhiên từ **1 → 6**.",
+            value=(
+                "`/roll` - Tung xúc xắc ngẫu nhiên từ **1 → 6**.\n"
+                "`/join` - Cho bot vào voice channel của bạn.\n"
+                "`/play` - Phát nhạc bằng link hoặc từ khóa.\n"
+                "`/skip` - Bỏ qua bài đang phát.\n"
+                "`/queue` - Xem hàng chờ nhạc.\n"
+                "`/leave` - Dừng nhạc và rời voice."
+            ),
             inline=False
         )
 
