@@ -38,14 +38,7 @@ class HelpCommand(commands.Cog):
 
         embed.add_field(
             name="🎲 Giải trí",
-            value=(
-                "`/roll` - Tung xúc xắc ngẫu nhiên từ **1 → 6**.\n"
-                "`/join` - Cho bot vào voice channel của bạn.\n"
-                "`/play` - Phát nhạc bằng link hoặc từ khóa.\n"
-                "`/skip` - Bỏ qua bài đang phát.\n"
-                "`/queue` - Xem hàng chờ nhạc.\n"
-                "`/leave` - Dừng nhạc và rời voice."
-            ),
+            value="`/roll` - Tung xúc xắc ngẫu nhiên từ **1 → 6**.",
             inline=False
         )
 

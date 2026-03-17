@@ -1,6 +1,5 @@
-discord.py[voice]
+discord.py
 openai
 python-dotenv
 requests
 duckduckgo-search
-yt-dlp

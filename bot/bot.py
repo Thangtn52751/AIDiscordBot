@@ -51,9 +51,7 @@ class BoBeoBot(commands.Bot):
             send_messages=True,
             embed_links=True,
             attach_files=True,
-            read_message_history=True,
-            connect=True,
-            speak=True,
+            read_message_history=True
         )
         return discord.utils.oauth_url(
             client_id,
