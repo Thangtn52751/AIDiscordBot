@@ -67,9 +67,13 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.states: dict[int, GuildMusicState] = {}
+        self.voice_locks: dict[int, asyncio.Lock] = {}
 
     def get_state(self, guild_id: int) -> GuildMusicState:
         return self.states.setdefault(guild_id, GuildMusicState())
+
+    def get_voice_lock(self, guild_id: int) -> asyncio.Lock:
+        return self.voice_locks.setdefault(guild_id, asyncio.Lock())
 
     def is_windows_runtime(self) -> bool:
         return sys.platform.startswith("win")
@@ -184,6 +188,18 @@ class Music(commands.Cog):
         if isinstance(error, discord.Forbidden):
             return "Bot không có quyền vào hoặc nói trong voice channel này."
 
+        if isinstance(error, asyncio.TimeoutError):
+            return (
+                "Kết nối voice bị timeout trong lúc bắt tay với Discord. "
+                "Nếu bot chạy trên WSL/VPS/container thì rất có thể UDP hoặc mạng đang bị chặn."
+            )
+
+        if "handshake" in lowered and "terminated" in lowered:
+            return (
+                "Bắt tay voice với Discord bị hủy giữa chừng. "
+                "Thường là do kết nối mạng/UDP của môi trường chạy bot không ổn hoặc bot đang giữ một voice session lỗi."
+            )
+
         if isinstance(error, discord.ClientException):
             return f"Không thể kết nối voice lúc này: {message}"
 
@@ -210,20 +226,44 @@ class Music(commands.Cog):
             return None, None
 
         channel = voice_state.channel
-        voice_client = interaction.guild.voice_client
+        lock = self.get_voice_lock(interaction.guild.id)
 
-        if voice_client and voice_client.channel != channel:
-            await voice_client.move_to(channel)
-            return voice_client, channel
+        async with lock:
+            voice_client = interaction.guild.voice_client
 
-        if voice_client:
-            return voice_client, channel
+            if voice_client and not voice_client.is_connected():
+                try:
+                    await voice_client.disconnect(force=True)
+                except Exception:
+                    pass
+                voice_client.cleanup()
+                voice_client = None
 
-        try:
-            connected_client = await channel.connect()
-        except Exception as error:
-            raise RuntimeError(self.format_voice_error(error)) from error
-        return connected_client, channel
+            if voice_client and voice_client.channel != channel:
+                try:
+                    await voice_client.move_to(channel)
+                except Exception as error:
+                    raise RuntimeError(self.format_voice_error(error)) from error
+                return voice_client, channel
+
+            if voice_client:
+                return voice_client, channel
+
+            try:
+                connected_client = await channel.connect(
+                    reconnect=False,
+                    timeout=20.0,
+                )
+            except Exception as error:
+                stale_client = interaction.guild.voice_client
+                if stale_client and not stale_client.is_connected():
+                    try:
+                        await stale_client.disconnect(force=True)
+                    except Exception:
+                        pass
+                    stale_client.cleanup()
+                raise RuntimeError(self.format_voice_error(error)) from error
+            return connected_client, channel
 
     async def extract_track(self, query: str, requested_by: str) -> Track:
         def _extract() -> Track:
