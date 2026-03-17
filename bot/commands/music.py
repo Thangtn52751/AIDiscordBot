@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -10,11 +11,16 @@ import yt_dlp
 from discord import app_commands
 from discord.ext import commands
 
-YDL_OPTIONS = {
+BASE_YDL_OPTIONS = {
     "format": "bestaudio/best",
     "default_search": "ytsearch",
     "noplaylist": True,
     "quiet": True,
+    "extractor_args": {
+        "generic": {
+            "impersonate": ["chrome"],
+        }
+    },
 }
 
 FFMPEG_OPTIONS = {
@@ -63,6 +69,86 @@ class Music(commands.Cog):
 
     def get_state(self, guild_id: int) -> GuildMusicState:
         return self.states.setdefault(guild_id, GuildMusicState())
+
+    def parse_browser_cookie_spec(
+        self,
+        raw_value: str,
+    ) -> tuple[str, str | None, str | None, str | None]:
+        match = re.fullmatch(
+            r"""(?x)
+            (?P<name>[^+:]+)
+            (?:\s*\+\s*(?P<keyring>[^:]+))?
+            (?:\s*:\s*(?!:)(?P<profile>.+?))?
+            (?:\s*::\s*(?P<container>.+))?
+            """,
+            raw_value.strip(),
+        )
+        if not match:
+            raise ValueError(
+                "YTDLP_COOKIES_FROM_BROWSER không đúng định dạng. "
+                "Ví dụ hợp lệ: edge, chrome, chrome:Default, firefox::none."
+            )
+
+        browser_name, keyring, profile, container = match.group(
+            "name",
+            "keyring",
+            "profile",
+            "container",
+        )
+        return browser_name.lower(), profile, keyring, container
+
+    def get_cookie_sources(
+        self,
+    ) -> tuple[str | None, list[tuple[str, str | None, str | None, str | None]]]:
+        cookie_file = os.getenv("YTDLP_COOKIEFILE")
+        browser_spec = os.getenv("YTDLP_COOKIES_FROM_BROWSER")
+
+        browsers: list[tuple[str, str | None, str | None, str | None]] = []
+        if browser_spec:
+            browsers.append(self.parse_browser_cookie_spec(browser_spec))
+        else:
+            for browser_name in ("edge", "chrome", "firefox"):
+                browsers.append((browser_name, None, None, None))
+
+        return cookie_file, browsers
+
+    def build_ydl_options(
+        self,
+        cookie_file: str | None = None,
+        browser_cookie: tuple[str, str | None, str | None, str | None] | None = None,
+    ) -> dict:
+        options = dict(BASE_YDL_OPTIONS)
+        options["extractor_args"] = {
+            key: dict(value) if isinstance(value, dict) else value
+            for key, value in BASE_YDL_OPTIONS.get("extractor_args", {}).items()
+        }
+
+        if cookie_file:
+            options["cookiefile"] = cookie_file
+
+        if browser_cookie:
+            options["cookiesfrombrowser"] = browser_cookie
+
+        return options
+
+    def is_youtube_auth_error(self, error: Exception) -> bool:
+        message = str(error).lower()
+        return (
+            "sign in to confirm you're not a bot" in message
+            or "use --cookies-from-browser or --cookies" in message
+            or "video unavailable" in message and "sign in" in message
+        )
+
+    def format_extract_error(self, error: Exception) -> str:
+        if self.is_youtube_auth_error(error):
+            return (
+                "YouTube đang chặn request ẩn danh. "
+                "Bot cần cookie từ trình duyệt để mở video này. "
+                "Bạn có thể đặt `YTDLP_COOKIES_FROM_BROWSER=edge` "
+                "hoặc `chrome`, rồi khởi động lại bot."
+            )
+
+        return str(error)
 
     def format_voice_error(self, error: Exception) -> str:
         message = str(error)
@@ -120,8 +206,33 @@ class Music(commands.Cog):
 
     async def extract_track(self, query: str, requested_by: str) -> Track:
         def _extract() -> Track:
-            with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-                info = ydl.extract_info(query, download=False)
+            cookie_file, browser_cookies = self.get_cookie_sources()
+            attempt_options = [self.build_ydl_options()]
+
+            if cookie_file:
+                attempt_options.append(self.build_ydl_options(cookie_file=cookie_file))
+
+            for browser_cookie in browser_cookies:
+                attempt_options.append(
+                    self.build_ydl_options(browser_cookie=browser_cookie)
+                )
+
+            last_error: Exception | None = None
+            info = None
+            for options in attempt_options:
+                try:
+                    with yt_dlp.YoutubeDL(options) as ydl:
+                        info = ydl.extract_info(query, download=False)
+                    break
+                except Exception as error:
+                    last_error = error
+                    if not self.is_youtube_auth_error(error):
+                        break
+
+            if info is None:
+                raise ValueError(
+                    self.format_extract_error(last_error or ValueError("Không rõ lỗi"))
+                )
 
             if "entries" in info:
                 info = next((entry for entry in info["entries"] if entry), None)
@@ -250,7 +361,7 @@ class Music(commands.Cog):
             track = await self.extract_track(query, interaction.user.display_name)
         except Exception as error:
             await interaction.followup.send(
-                f"Không mở được bài hát này: {error}"
+                f"Không mở được bài hát này: {self.format_extract_error(error)}"
             )
             return
 
