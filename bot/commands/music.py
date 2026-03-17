@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import sys
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -70,6 +71,9 @@ class Music(commands.Cog):
     def get_state(self, guild_id: int) -> GuildMusicState:
         return self.states.setdefault(guild_id, GuildMusicState())
 
+    def is_windows_runtime(self) -> bool:
+        return sys.platform.startswith("win")
+
     def parse_browser_cookie_spec(
         self,
         raw_value: str,
@@ -106,7 +110,7 @@ class Music(commands.Cog):
         browsers: list[tuple[str, str | None, str | None, str | None]] = []
         if browser_spec:
             browsers.append(self.parse_browser_cookie_spec(browser_spec))
-        else:
+        elif self.is_windows_runtime():
             for browser_name in ("edge", "chrome", "firefox"):
                 browsers.append((browser_name, None, None, None))
 
@@ -140,7 +144,24 @@ class Music(commands.Cog):
         )
 
     def format_extract_error(self, error: Exception) -> str:
+        message = str(error)
+        lowered = message.lower()
+
+        if "could not find" in lowered and "cookies database" in lowered:
+            return (
+                "Bot không đọc được cookie trình duyệt trong môi trường đang chạy. "
+                "Nếu bot chạy trên WSL/VPS/container, hãy export cookie YouTube ra file "
+                "rồi đặt `YTDLP_COOKIEFILE=/duong/dan/cookies.txt`."
+            )
+
         if self.is_youtube_auth_error(error):
+            if not self.is_windows_runtime():
+                return (
+                    "YouTube đang chặn request ẩn danh. "
+                    "Bot đang chạy ngoài Windows nên không thể tự đọc cookie trình duyệt. "
+                    "Hãy export cookie YouTube ra file rồi đặt "
+                    "`YTDLP_COOKIEFILE=/duong/dan/cookies.txt`."
+                )
             return (
                 "YouTube đang chặn request ẩn danh. "
                 "Bot cần cookie từ trình duyệt để mở video này. "
@@ -148,7 +169,7 @@ class Music(commands.Cog):
                 "hoặc `chrome`, rồi khởi động lại bot."
             )
 
-        return str(error)
+        return message
 
     def format_voice_error(self, error: Exception) -> str:
         message = str(error)
