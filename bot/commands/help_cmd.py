@@ -9,62 +9,62 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Xem danh sach cac lenh"
+        description="Xem danh sách các lệnh"
     )
     async def help_command(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
 
         embed = discord.Embed(
-            title="Trung tam tro giup",
+            title="Trung tâm trợ giúp",
             description=(
-                "Day la cac lenh hien co cua Bo Beo.\n"
-                "Ban co the dung de giai tri hoac phat nhac."
+                "Đây là các lệnh đang có của Bo Béo.\n"
+                "Bạn có thể dùng giải trí hoặc nghe nhạc."
             ),
             color=discord.Color.blurple()
         )
 
         embed.add_field(
-            name="Lenh co ban",
+            name="Lệnh cơ bản",
             value=(
-                "`/help` - Xem cac lenh hien co cua bot.\n"
-                "`/ping` - Kiem tra do tre cua bot."
+                "`/help` - Xem các lệnh hiện có của bot.\n"
+                "`/ping` - Kiểm tra độ trễ của bot."
             ),
             inline=False
         )
 
         embed.add_field(
-            name="Thong tin nguoi dung",
-            value="`/userinfo` - Xem thong tin co ban cua mot thanh vien.",
+            name="Thông tin user",
+            value="`/userinfo` - Xem thông tin cơ bản của 1 thành viên.",
             inline=False
         )
 
         embed.add_field(
             name="Giai tri",
-            value="`/roll` - Tung xuc xac ngau nhien tu 1-6.",
+            value="`/roll` - Tung xúc sắc 1-6.",
             inline=False
         )
 
         embed.add_field(
             name="Am nhac",
             value=(
-                "`/play` - Phat nhac tu ten bai hat hoac link.\n"
-                "`/queue` - Xem bai dang phat va hang cho.\n"
-                "`/pause` - Tam dung.\n"
-                "`/resume` - Tiep tuc bai hat.\n"
-                "`/skip` - Bo qua bai hat dang phat.\n"
-                "`/stop` - Dung nhac, roi khoi voice."
+                "`/play` - Phát theo tên bài hát hoặc link.\n"
+                "`/queue` - Xem bài hát đang phát và hàng chờ.\n"
+                "`/pause` - Tạm dừng.\n"
+                "`/resume` - Tiếp tục bài hát.\n"
+                "`/skip` - Bỏ qua bài hát đang phát.\n"
+                "`/stop` - Dừng nhạc."
             ),
             inline=False
         )
 
         embed.add_field(
-            name="Quan tri bot",
-            value="`/sync` - Dong bo lai slash command trong server.",
+            name="Quản trị",
+            value="`/sync` - Đồng bộ command trong server này.",
             inline=False
         )
 
         embed.set_footer(
-            text=f"Yeu cau boi {interaction.user}",
+            text=f"Yêu cầu bởi {interaction.user}",
             icon_url=interaction.user.display_avatar.url
         )
 

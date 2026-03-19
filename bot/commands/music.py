@@ -44,7 +44,7 @@ class Track:
     @property
     def duration_label(self) -> str:
         if self.duration is None:
-            return "Khong ro"
+            return "Không rõ"
 
         minutes, seconds = divmod(self.duration, 60)
         hours, minutes = divmod(minutes, 60)
@@ -238,7 +238,7 @@ class Music(commands.Cog):
 
     @app_commands.command(
         name="play",
-        description="Phát nhạc từ tên hoặc lịn."
+        description="Phát nhạc từ tên hoặc link."
     )
     @app_commands.describe(query="Tên bài hát hoặc link YouTube")
     async def play(self, interaction: discord.Interaction, query: str) -> None:

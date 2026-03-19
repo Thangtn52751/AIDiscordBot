@@ -9,9 +9,9 @@ class UserInfo(commands.Cog):
 
     @app_commands.command(
         name="userinfo",
-        description="Xem thong tin cua 1 thanh vien."
+        description="Xem thông tin của 1 thành viên."
     )
-    @app_commands.describe(member="Thanh vien ban muon xem thong tin")
+    @app_commands.describe(member="Thành viên bạn muốn xem thông tin")
     async def userinfo(
         self,
         interaction: discord.Interaction,
@@ -23,7 +23,7 @@ class UserInfo(commands.Cog):
 
         joined_at = (
             member.joined_at.strftime("%d/%m/%Y %H:%M")
-            if member.joined_at else "Khong ro"
+            if member.joined_at else "Không rõ"
         )
         created_at = member.created_at.strftime("%d/%m/%Y %H:%M")
 
@@ -31,7 +31,7 @@ class UserInfo(commands.Cog):
         roles_text = self._format_roles(roles)
 
         embed = discord.Embed(
-            title="Thong tin nguoi dung",
+            title="Thông tin user",
             description=f"**{member.mention}**",
             color=discord.Color.blurple()
         )
@@ -39,14 +39,14 @@ class UserInfo(commands.Cog):
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.add_field(name="Username", value=str(member), inline=True)
         embed.add_field(name="User ID", value=str(member.id), inline=True)
-        embed.add_field(name="Tao tai khoan", value=created_at, inline=False)
+        embed.add_field(name="Tạo TK", value=created_at, inline=False)
         embed.add_field(name="Tham gia server", value=joined_at, inline=False)
-        embed.add_field(name="Role cao nhat", value=member.top_role.mention, inline=True)
-        embed.add_field(name="So luong role", value=str(len(roles)), inline=True)
-        embed.add_field(name="Danh sach role", value=roles_text, inline=False)
+        embed.add_field(name="Role cao nhất", value=member.top_role.mention, inline=True)
+        embed.add_field(name="Số lượng role", value=str(len(roles)), inline=True)
+        embed.add_field(name="Danh sách role", value=roles_text, inline=False)
 
         embed.set_footer(
-            text=f"Yeu cau boi {interaction.user}",
+            text=f"Yêu cầu bởi {interaction.user}",
             icon_url=interaction.user.display_avatar.url
         )
         embed.set_author(
@@ -59,7 +59,7 @@ class UserInfo(commands.Cog):
     @staticmethod
     def _format_roles(roles: list[str]) -> str:
         if not roles:
-            return "Khong co role"
+            return "Không có role"
 
         joined = ", ".join(roles)
         if len(joined) <= 1024:
@@ -76,7 +76,7 @@ class UserInfo(commands.Cog):
             current_length += extra_length
 
         hidden_count = len(roles) - len(visible_roles)
-        suffix = f" ... va {hidden_count} role khac" if hidden_count > 0 else ""
+        suffix = f" ... và {hidden_count} role khác" if hidden_count > 0 else ""
         return ", ".join(visible_roles) + suffix
 
 
