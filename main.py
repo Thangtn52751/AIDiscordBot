@@ -1,18 +1,10 @@
 import os
-<<<<<<< ours
-
-=======
->>>>>>> theirs
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from bot.bot import bot
 
-<<<<<<< ours
-
-=======
->>>>>>> theirs
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 if not TOKEN:
