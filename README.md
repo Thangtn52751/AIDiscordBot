@@ -1,206 +1,85 @@
-# 🤖 AIDiscordBot
+# AIDiscordBot
 
-Bot Discord tích hợp **AI chat** và **phát nhạc YouTube trong voice channel**.
+Bot Discord tich hop AI chat va phat nhac YouTube trong voice channel.
 
----
+## Tinh nang
 
-## ✨ Tính năng
+- Chat AI voi nguoi dung
+- Phat nhac YouTube bang `/play`
+- Hang cho nhac, pause, resume, skip, stop
 
-### 💬 Chat AI
+## Bien moi truong
 
-* Trò chuyện thông minh với người dùng
-* Ghi nhớ ngữ cảnh hội thoại theo từng user
-* Dùng OpenAI API
+Can thiet:
 
-### 🎵 Phát nhạc
+- `DISCORD_TOKEN`
+- `OPENAI_API_KEY`
+- `DISCORD_GUILD_ID`
 
-* Phát nhạc từ YouTube (tên bài hoặc link)
-* Hỗ trợ hàng chờ (queue)
-* Điều khiển nhạc trực tiếp bằng slash command
+Tuy chon:
 
----
+- `FFMPEG_PATH`
+- `YTDLP_COOKIEFILE`
+- `YTDLP_COOKIES_FROM_BROWSER`
 
-## 🎮 Danh sách lệnh
-
-| Lệnh                | Mô tả             |           |
-| ------------------- | ----------------- | --------- |
-| `/play <tên bài hát | link>`            | Phát nhạc |
-| `/queue`            | Xem hàng chờ      |           |
-| `/pause`            | Tạm dừng          |           |
-| `/resume`           | Tiếp tục          |           |
-| `/skip`             | Bỏ qua            |           |
-| `/stop`             | Dừng và rời voice |           |
-
----
-
-## 🧱 Công nghệ sử dụng
-
-* `discord.py`
-* `yt-dlp`
-* `FFmpeg`
-* `OpenAI API`
-* Python 3.10+
-
----
-
-## ⚙️ Cài đặt Local
-
-### 1. Clone repo
-
-```bash
-git clone https://github.com/your-repo/AIDiscordBot.git
-cd AIDiscordBot
-```
-
-### 2. Cài dependencies
+## Chay local
 
 ```bash
 pip install -r requirements.txt
+python main.py
 ```
 
-### 3. Cài FFmpeg
+Neu muon sua nhanh loi YouTube tren may local:
 
-Có 2 cách:
-
-#### Cách 1: Thêm vào PATH (khuyến nghị)
-
-* Download: https://ffmpeg.org/download.html
-* Thêm vào biến môi trường PATH
-
-#### Cách 2: Đặt trong project
-
+<<<<<<< ours
+```env
+YTDLP_COOKIES_FROM_BROWSER=edge
 ```
-bin/ffmpeg/ffmpeg.exe
-```
+=======
+- `DISCORD_TOKEN`
+- `OPENAI_API_KEY`
+- `DISCORD_GUILD_ID`
+- `YTDLP_COOKIEFILE`
+>>>>>>> theirs
 
-Hoặc set:
+## Railway Volume
+
+Bot da duoc chuan bi de dung Railway Volume, khong can `YTDLP_COOKIE_BASE64`.
+
+### Cach set tren Railway
+
+1. Tao Volume trong Railway
+2. Mount volume vao app, vi du: `/data`
+3. Upload file `cookies.txt` vao volume
+4. Set env:
 
 ```env
-FFMPEG_PATH=/đường/dẫn/ffmpeg
+YTDLP_COOKIEFILE=/data/cookies.txt
+DISCORD_TOKEN=...
+OPENAI_API_KEY=...
+DISCORD_GUILD_ID=...
 ```
 
----
+<<<<<<< ours
+### Ghi chu
 
-## 🔐 Cấu hình biến môi trường
+- Tren Railway, uu tien `YTDLP_COOKIEFILE`
+- `YTDLP_COOKIES_FROM_BROWSER` chi hop cho local
+- Khong commit `cookies.txt` vao repo
 
-Tạo file `.env`:
+## Deploy Railway
 
-```env
-DISCORD_TOKEN=your_token
-OPENAI_API_KEY=your_openai_key
-DISCORD_GUILD_ID=your_guild_id
+Repo nay da co san:
 
-YTDLP_COOKIEFILE=
-YTDLP_COOKIE_BASE64=
+- `railway.json`
+- `railpack.json`
+- `nixpacks.toml`
+
+Railway se chay bot bang:
+
+```bash
+python main.py
 ```
-
----
-
-## 🍪 Fix lỗi YouTube (Quan trọng)
-
-Nếu gặp lỗi:
-
-```
-Sign in to confirm you're not a bot
-```
-
-### ✅ Cách 1: Dùng cookies.txt
-
-```env
-YTDLP_COOKIEFILE=/path/to/cookies.txt
-```
-
-### ✅ Cách 2: Lấy từ browser (local)
-
-```env
-YTDLP_COOKIES_FROM_BROWSER=chrome
-```
-
-⚠️ **Railway KHÔNG dùng được cách này**
-
----
-
-## 🔐 Cách an toàn (Khuyên dùng): Base64 Cookie
-
-### Bước 1: Convert cookies
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\cookies.txt"))
-```
-
-### Bước 2: Set biến
-
-```env
-YTDLP_COOKIE_BASE64=your_base64_string
-```
-
-👉 Bot sẽ tự:
-
-* Decode
-* Tạo file tạm
-* Gán vào yt-dlp
-
----
-
-## 🚀 Deploy Railway
-
-### 1. Push code lên GitHub
-
-### 2. Tạo project Railway
-
-* Chọn repo
-* Add variables
-
-### 3. Set ENV trên Railway
-
-```env
-DISCORD_TOKEN=
-OPENAI_API_KEY=
-DISCORD_GUILD_ID=
-YTDLP_COOKIE_BASE64=
-```
-
-### 4. Deploy
-
-Railway đã có sẵn:
-
-* `ffmpeg`
-* start command
-* auto restart
-
-👉 Nhớ bật:
-
-* ✅ MESSAGE CONTENT INTENT
-* ✅ SERVER MEMBERS INTENT (nếu cần)
-
----
-
-## 🧠 TODO (Có thể mở rộng)
-
-* [ ] Loop nhạc
-* [ ] Shuffle queue
-* [ ] Hiển thị lyrics
-* [ ] Dashboard web quản lý bot
-* [ ] Cache bài hát
-
----
-
-## ❤️ Ghi chú
-
-* Không commit `cookies.txt` lên GitHub
-* Dùng `.env` để bảo mật key
-* Nên dùng Base64 cookie khi deploy
-
----
-
-## 📜 License
-
-MIT License
-
----
-
-## 👨‍💻 Tác giả
-
-Developed by **Thắng Trần Nam** 🚀
-
----
+=======
+Neu ban khong muon commit file cookie vao repo, hay dung Railway Volume roi mount file vao mot duong dan co dinh, sau do tro `YTDLP_COOKIEFILE` toi duong dan do.
+>>>>>>> theirs
