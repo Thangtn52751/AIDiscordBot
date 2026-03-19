@@ -1,0 +1,8 @@
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.13"
+
+[phases.setup]
+nixPkgs = ["ffmpeg"]
+
+[start]
+cmd = "python main.py"

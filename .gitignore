@@ -9,6 +9,8 @@ venv/
 
 # Environment file
 .env
+cookies.txt
+*.cookies
 
 # Logs
 *.log

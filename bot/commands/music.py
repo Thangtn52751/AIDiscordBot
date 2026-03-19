@@ -184,8 +184,13 @@ class GuildMusicState:
 
     @staticmethod
     def _extract_info(query: str) -> dict:
-        with YoutubeDL(YTDLP_OPTIONS) as ytdl:
-            info = ytdl.extract_info(query, download=False)
+        options = GuildMusicState._build_ytdlp_options()
+
+        try:
+            with YoutubeDL(options) as ytdl:
+                info = ytdl.extract_info(query, download=False)
+        except Exception as exc:
+            raise RuntimeError(GuildMusicState._format_ytdlp_error(exc)) from exc
 
         if info is None:
             raise RuntimeError("Không tìm thấy kết quả")
@@ -197,6 +202,58 @@ class GuildMusicState:
             info = entries[0]
 
         return info
+
+    @staticmethod
+    def _build_ytdlp_options() -> dict:
+        options = dict(YTDLP_OPTIONS)
+
+        cookiefile = os.getenv("YTDLP_COOKIEFILE")
+        if cookiefile:
+            options["cookiefile"] = cookiefile
+
+        browser_spec = os.getenv("YTDLP_COOKIES_FROM_BROWSER")
+        if browser_spec:
+            options["cookiesfrombrowser"] = GuildMusicState._parse_cookies_from_browser(browser_spec)
+
+        return options
+
+    @staticmethod
+    def _parse_cookies_from_browser(browser_spec: str) -> tuple[str, str | None, str | None, str | None]:
+        spec = browser_spec.strip()
+
+        container = None
+        if "::" in spec:
+            spec, container = spec.split("::", 1)
+            container = container.strip() or None
+
+        profile = None
+        if ":" in spec:
+            spec, profile = spec.split(":", 1)
+            profile = profile.strip() or None
+
+        keyring = None
+        if "+" in spec:
+            spec, keyring = spec.split("+", 1)
+            keyring = keyring.strip().upper() or None
+
+        browser = spec.strip().lower()
+        if not browser:
+            raise RuntimeError("YTDLP_COOKIES_FROM_BROWSER khong hop le")
+
+        return (browser, profile, keyring, container)
+
+    @staticmethod
+    def _format_ytdlp_error(exc: Exception) -> str:
+        message = str(exc)
+        if "Sign in to confirm you’re not a bot" in message or "Sign in to confirm you're not a bot" in message:
+            return (
+                "YouTube dang yeu cau xac minh. Hay cung cap cookies cho yt-dlp bang "
+                "`YTDLP_COOKIEFILE=/duong-dan/cookies.txt` hoac "
+                "`YTDLP_COOKIES_FROM_BROWSER=chrome`/`edge`. Tren Railway, nen dung "
+                "`YTDLP_COOKIEFILE` thay vi cookies tu browser."
+            )
+
+        return message
 
     @staticmethod
     def _resolve_ffmpeg_executable() -> str:
