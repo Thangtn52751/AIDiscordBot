@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 VOICE_SESSION_RESET_CODES = {4006, 4017}
 
-
 YTDLP_OPTIONS = {
     "format": "bestaudio/best",
     "noplaylist": True,
@@ -44,7 +43,7 @@ class Track:
     @property
     def duration_label(self) -> str:
         if self.duration is None:
-            return "Không rõ"
+            return "Khong ro"
 
         minutes, seconds = divmod(self.duration, 60)
         hours, minutes = divmod(minutes, 60)
@@ -124,7 +123,7 @@ class GuildMusicState:
             except Exception as exc:
                 self.current = None
                 await self._notify(
-                    f"Không thể tải bài **{track.title}**: `{exc}`. Chuyển sang bài hát tiếp theo."
+                    f"Khong the tai bai **{track.title}**: `{exc}`. Chuyen sang bai tiep theo."
                 )
                 continue
 
@@ -138,8 +137,8 @@ class GuildMusicState:
 
             voice_client.play(source, after=after_playback)
             await self._notify(
-                f"Đang phát: **{track.title}** ({track.duration_label})"
-                f" | yêu cầu bởi **{track.requester_name}**"
+                f"Dang phat: **{track.title}** ({track.duration_label})"
+                f" | yeu cau boi **{track.requester_name}**"
             )
             return
 
@@ -147,7 +146,7 @@ class GuildMusicState:
 
     async def _handle_track_end(self, error: Exception | None) -> None:
         if error is not None:
-            await self._notify(f"Phát nhạc gặp lỗi bảo NTT sửa nhanh: `{error}`")
+            await self._notify(f"Phat nhac gap loi: `{error}`")
 
         async with self.lock:
             self.current = None
@@ -160,7 +159,7 @@ class GuildMusicState:
         info = await asyncio.to_thread(self._extract_info, track.webpage_url)
         stream_url = info.get("url")
         if not stream_url:
-            raise RuntimeError("Không lấy được audio bài hát")
+            raise RuntimeError("Khong lay duoc audio bai hat")
 
         audio = discord.FFmpegPCMAudio(
             stream_url,
@@ -193,33 +192,32 @@ class GuildMusicState:
             raise RuntimeError(GuildMusicState._format_ytdlp_error(exc)) from exc
 
         if info is None:
-            raise RuntimeError("Không tìm thấy kết quả")
+            raise RuntimeError("Khong tim thay ket qua")
 
         if "entries" in info:
             entries = [entry for entry in info["entries"] if entry]
             if not entries:
-                raise RuntimeError("Không tìm thấy bài hát phù hợp")
+                raise RuntimeError("Khong tim thay bai hat phu hop")
             info = entries[0]
 
         return info
 
-@staticmethod
-def _build_ytdlp_options() -> dict:
-    options = dict(YTDLP_OPTIONS)
+    @staticmethod
+    def _build_ytdlp_options() -> dict:
+        options = dict(YTDLP_OPTIONS)
 
-    cookiefile = os.getenv("YTDLP_COOKIEFILE")
-    if cookiefile:
-        options["cookiefile"] = cookiefile
+        cookiefile = os.getenv("YTDLP_COOKIEFILE")
+        if cookiefile:
+            options["cookiefile"] = cookiefile
 
-    browser_spec = os.getenv("YTDLP_COOKIES_FROM_BROWSER")
-    if browser_spec:
-        options["cookiesfrombrowser"] = GuildMusicState._parse_cookies_from_browser(browser_spec)
+        browser_spec = os.getenv("YTDLP_COOKIES_FROM_BROWSER")
+        if browser_spec:
+            options["cookiesfrombrowser"] = GuildMusicState._parse_cookies_from_browser(browser_spec)
 
-    options["http_headers"] = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
-
-    return options
+        options["http_headers"] = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        return options
 
     @staticmethod
     def _parse_cookies_from_browser(browser_spec: str) -> tuple[str, str | None, str | None, str | None]:
@@ -256,7 +254,6 @@ def _build_ytdlp_options() -> dict:
                 "`YTDLP_COOKIES_FROM_BROWSER=chrome`/`edge`. Tren Railway, nen dung "
                 "`YTDLP_COOKIEFILE` thay vi cookies tu browser."
             )
-
         return message
 
     @staticmethod
@@ -299,20 +296,20 @@ class Music(commands.Cog):
 
     @app_commands.command(
         name="play",
-        description="Phát nhạc từ tên hoặc link."
+        description="Phat nhac tu ten hoac link."
     )
-    @app_commands.describe(query="Tên bài hát hoặc link YouTube")
+    @app_commands.describe(query="Ten bai hat hoac link YouTube")
     async def play(self, interaction: discord.Interaction, query: str) -> None:
         if interaction.guild is None or not isinstance(interaction.user, discord.Member):
             await interaction.response.send_message(
-                "Lệnh này chỉ dùng được trong Tấu hài cùng BO BÉO.",
+                "Lenh nay chi dung duoc trong server.",
                 ephemeral=True,
             )
             return
 
         if not interaction.user.voice or not interaction.user.voice.channel:
             await interaction.response.send_message(
-                "Bạn cần phải vào vocie trước khi thực hiện lệnh này.",
+                "Ban can vao voice truoc khi dung lenh nay.",
                 ephemeral=True,
             )
             return
@@ -331,12 +328,12 @@ class Music(commands.Cog):
             info = await asyncio.to_thread(state._extract_info, query)
         except Exception as exc:
             await interaction.followup.send(
-                f"Không tìm được bài hát phù hợp: `{exc}`",
+                f"Khong tim duoc bai hat phu hop: `{exc}`",
                 ephemeral=True,
             )
             return
 
-        title = info.get("title") or "Không rõ tên bài"
+        title = info.get("title") or "Khong ro ten bai"
         webpage_url = info.get("webpage_url") or info.get("original_url") or query
         duration = info.get("duration")
         track = Track(
@@ -349,66 +346,66 @@ class Music(commands.Cog):
         should_start, queue_size = await state.enqueue(track, interaction.channel_id)
 
         embed = discord.Embed(
-            title="Thêm nhạc thành công",
+            title="Them nhac thanh cong",
             color=discord.Color.green(),
         )
-        embed.add_field(name="Bài", value=track.title, inline=False)
-        embed.add_field(name="Thời lượng", value=track.duration_label, inline=True)
-        embed.add_field(name="Người yêu cầu", value=track.requester_name, inline=True)
+        embed.add_field(name="Bai", value=track.title, inline=False)
+        embed.add_field(name="Thoi luong", value=track.duration_label, inline=True)
+        embed.add_field(name="Nguoi yeu cau", value=track.requester_name, inline=True)
         embed.add_field(
-            name="Trạng thái",
+            name="Trang thai",
             value=(
-                f"Bot đã vào **{voice_client.channel}** và đang chuẩn bị phát."
+                f"Bot da vao **{voice_client.channel}** va dang chuan bi phat."
                 if should_start
-                else f"Đã thêm bài hát vào hàn chờ. Còn {queue_size} ở hàng chờ."
+                else f"Da them bai hat vao hang cho. Con {queue_size} bai trong hang cho."
             ),
             inline=False,
         )
         if is_probable_url(query):
-            embed.add_field(name="Nguồn", value=track.webpage_url, inline=False)
+            embed.add_field(name="Nguon", value=track.webpage_url, inline=False)
 
         await interaction.followup.send(embed=embed)
 
     @app_commands.command(
         name="pause",
-        description="Tạm dừng bài đang phát."
+        description="Tam dung bai dang phat."
     )
     async def pause(self, interaction: discord.Interaction) -> None:
         voice_client = interaction.guild.voice_client if interaction.guild else None
         if voice_client is None or not voice_client.is_playing():
             await interaction.response.send_message(
-                "Hiện không có bài nào đang phát.",
+                "Hien khong co bai nao dang phat.",
                 ephemeral=True,
             )
             return
 
         voice_client.pause()
-        await interaction.response.send_message("Đã tạm dừng bài hát hiện tại.")
+        await interaction.response.send_message("Da tam dung bai hat hien tai.")
 
     @app_commands.command(
         name="resume",
-        description="Tiếm tục bài hát đang dừng."
+        description="Tiep tuc bai hat dang dung."
     )
     async def resume(self, interaction: discord.Interaction) -> None:
         voice_client = interaction.guild.voice_client if interaction.guild else None
         if voice_client is None or not voice_client.is_paused():
             await interaction.response.send_message(
-                "Không có bài nào đang dừng.",
+                "Khong co bai nao dang dung.",
                 ephemeral=True,
             )
             return
 
         voice_client.resume()
-        await interaction.response.send_message("Đã tiếp tục phát nhạc.")
+        await interaction.response.send_message("Da tiep tuc phat nhac.")
 
     @app_commands.command(
         name="skip",
-        description="Bỏ qua bài hiện tại."
+        description="Bo qua bai hien tai."
     )
     async def skip(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             await interaction.response.send_message(
-                "Lệnh này chỉ được dùng trong SV Tấu hài cùng Bo Béo.",
+                "Lenh nay chi dung duoc trong server.",
                 ephemeral=True,
             )
             return
@@ -417,21 +414,21 @@ class Music(commands.Cog):
         skipped = await state.skip()
         if not skipped:
             await interaction.response.send_message(
-                "Không có bài hát nào cần bỏ qua.",
+                "Khong co bai hat nao can bo qua.",
                 ephemeral=True,
             )
             return
 
-        await interaction.response.send_message("Đã bỏ qua bài hiện tại.")
+        await interaction.response.send_message("Da bo qua bai hien tai.")
 
     @app_commands.command(
         name="stop",
-        description="Dừng phát nhạc, tự động thoát VC."
+        description="Dung phat nhac va thoat voice."
     )
     async def stop(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             await interaction.response.send_message(
-                "Lệnh này chỉ được dùng trong SV Tấu Hài Cùng Bo Béo.",
+                "Lenh nay chi dung duoc trong server.",
                 ephemeral=True,
             )
             return
@@ -439,43 +436,43 @@ class Music(commands.Cog):
         state = self.get_state(interaction.guild)
         if state.voice_client is None:
             await interaction.response.send_message(
-                "Bot chưa ở VC nào.",
+                "Bot chua o voice nao.",
                 ephemeral=True,
             )
             return
 
         await state.stop()
-        await interaction.response.send_message("Đã dừng nhạc, Bo béo thoát đây!!!!")
+        await interaction.response.send_message("Da dung nhac va roi khoi voice.")
 
     @app_commands.command(
         name="queue",
-        description="Xem list nhạc và hàng chờ."
+        description="Xem bai dang phat va hang cho."
     )
     async def queue(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             await interaction.response.send_message(
-                "Lệnh này chỉ được dùng trong SV Tấu Hài Cùng Bo Béo.",
+                "Lenh nay chi dung duoc trong server.",
                 ephemeral=True,
             )
             return
 
         state = self.get_state(interaction.guild)
         if state.current is None and not state.queue:
-            await interaction.response.send_message("Hàng chờ hiện đang trống.", ephemeral=True)
+            await interaction.response.send_message("Hang cho hien dang trong.", ephemeral=True)
             return
 
         embed = discord.Embed(
-            title="Danh sách nhạc",
+            title="Danh sach nhac",
             color=discord.Color.blurple(),
         )
 
         if state.current is not None:
             embed.add_field(
-                name="Đang phát",
+                name="Dang phat",
                 value=(
                     f"**{state.current.title}**"
                     f" ({state.current.duration_label})"
-                    f" | yêu cầu bởi **{state.current.requester_name}**"
+                    f" | yeu cau boi **{state.current.requester_name}**"
                 ),
                 inline=False,
             )
@@ -484,11 +481,10 @@ class Music(commands.Cog):
             upcoming = []
             for index, track in enumerate(list(state.queue)[:10], start=1):
                 upcoming.append(
-                    f"`{index}.` {track.title} ({track.duration_label})"
-                    f" - {track.requester_name}"
+                    f"`{index}.` {track.title} ({track.duration_label}) - {track.requester_name}"
                 )
             embed.add_field(
-                name=f"Kế tiếp ({len(state.queue)})",
+                name=f"Ke tiep ({len(state.queue)})",
                 value="\n".join(upcoming),
                 inline=False,
             )
@@ -520,15 +516,14 @@ class Music(commands.Cog):
         close_code = getattr(exc, "code", None)
         if close_code in VOICE_SESSION_RESET_CODES:
             return (
-                "Bot không thể vào VC vì discord.py hiện tại không"
-                f"tương thích với Discord voice handshake (websocket {close_code}). "
-                "Cập nhật dependency lên `discord.py[voice]>=2.7.1`, cài lại "
-                "requirements, rồi khởi động lại bot (cụ thể gọi NTT)."
+                "Bot khong the vao voice chat vi discord.py hien tai khong con "
+                f"tuong thich voi Discord voice handshake (websocket {close_code}). "
+                "Hay cap nhat dependency va khoi dong lai bot."
             )
 
         return (
-            "Bot không thể vào VC. Hãy kiểm tra quyền Connect/Speak, cấu hình "
-            "voice dependency, và FFmpeg."
+            "Bot khong the vao voice. Hay kiem tra quyen Connect/Speak, "
+            "voice dependency, va FFmpeg."
         )
 
 
