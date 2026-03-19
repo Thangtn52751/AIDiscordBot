@@ -39,24 +39,29 @@ class BoBeoBot(commands.Bot):
         self.guild_id = os.getenv("DISCORD_GUILD_ID")
 
     async def setup_hook(self) -> None:
+        await load_commands(self)
+
         if self.guild_id:
             guild = discord.Object(id=int(self.guild_id))
-            self.tree.clear_commands(guild=None)
-            cleared = await self.tree.sync()
-            print(f"Cleared {len(cleared)} global slash commands")
+            try:
+                # Commands are defined as global app commands, so copy them into the
+                # target guild set before syncing for fast guild-scoped updates.
+                self.tree.copy_global_to(guild=guild)
+                synced = await self.tree.sync(guild=guild)
+                print(
+                    f"Synced {len(synced)} guild slash commands to {self.guild_id}: "
+                    f"{[cmd.name for cmd in synced]}"
+                )
+                return
+            except discord.Forbidden:
+                print(
+                    "Missing access while syncing guild slash commands. "
+                    f"Check DISCORD_GUILD_ID={self.guild_id}, confirm the bot is in that server, "
+                    "and re-invite it with bot + applications.commands scopes."
+                )
 
-            self.tree.clear_commands(guild=guild)
-            cleared_guild = await self.tree.sync(guild=guild)
-            print(f"Cleared {len(cleared_guild)} guild slash commands from {self.guild_id}")
-
-            await load_commands(self)
-            self.tree.copy_global_to(guild=guild)
-            synced = await self.tree.sync(guild=guild)
-            print(f"Synced {len(synced)} guild slash commands to {self.guild_id}: {[cmd.name for cmd in synced]}")
-        else:
-            await load_commands(self)
-            synced = await self.tree.sync()
-            print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
+        synced = await self.tree.sync()
+        print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
 
     async def on_app_command_error(
         self,
