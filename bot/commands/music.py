@@ -203,19 +203,23 @@ class GuildMusicState:
 
         return info
 
-    @staticmethod
-    def _build_ytdlp_options() -> dict:
-        options = dict(YTDLP_OPTIONS)
+@staticmethod
+def _build_ytdlp_options() -> dict:
+    options = dict(YTDLP_OPTIONS)
 
-        cookiefile = os.getenv("YTDLP_COOKIEFILE")
-        if cookiefile:
-            options["cookiefile"] = cookiefile
+    cookiefile = os.getenv("YTDLP_COOKIEFILE")
+    if cookiefile:
+        options["cookiefile"] = cookiefile
 
-        browser_spec = os.getenv("YTDLP_COOKIES_FROM_BROWSER")
-        if browser_spec:
-            options["cookiesfrombrowser"] = GuildMusicState._parse_cookies_from_browser(browser_spec)
+    browser_spec = os.getenv("YTDLP_COOKIES_FROM_BROWSER")
+    if browser_spec:
+        options["cookiesfrombrowser"] = GuildMusicState._parse_cookies_from_browser(browser_spec)
 
-        return options
+    options["http_headers"] = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+
+    return options
 
     @staticmethod
     def _parse_cookies_from_browser(browser_spec: str) -> tuple[str, str | None, str | None, str | None]:
