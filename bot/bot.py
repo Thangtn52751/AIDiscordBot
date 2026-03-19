@@ -1,21 +1,38 @@
-import discord
-from discord.ext import commands
-from dotenv import load_dotenv
-from ai.llm_client import ask_ai
 import asyncio
+import os
+import traceback
+
+import discord
+from ai.llm_client import ask_ai
 from ai.llm_client import ask_ai_with_image
 from bot.user_context import build_message_context, load_user_profiles
-import os
+from discord import app_commands
+from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
+
+
+class BoBeoCommandTree(app_commands.CommandTree):
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> None:
+        await self.client.on_app_command_error(interaction, error)
 
 
 class BoBeoBot(commands.Bot):
     def __init__(self) -> None:
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(
+            command_prefix="!",
+            intents=intents,
+            tree_cls=BoBeoCommandTree,
+        )
         with open("data/personality.txt", "r", encoding="utf-8") as f:
             self.personality = f.read()
         self.user_profiles = load_user_profiles()
@@ -41,6 +58,21 @@ class BoBeoBot(commands.Bot):
             synced = await self.tree.sync()
             print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
 
+    async def on_app_command_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> None:
+        command_name = interaction.command.qualified_name if interaction.command else "unknown"
+        print(f"Slash command error in /{command_name}: {error}")
+        traceback.print_exception(type(error), error, error.__traceback__)
+
+        message = "Lệnh đã gặp lỗi khi chạy."
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+
     def get_invite_url(self) -> str | None:
         client_id = self.application_id or (self.user.id if self.user else None)
         if not client_id:
@@ -51,7 +83,10 @@ class BoBeoBot(commands.Bot):
             send_messages=True,
             embed_links=True,
             attach_files=True,
-            read_message_history=True
+            read_message_history=True,
+            connect=True,
+            speak=True,
+            use_voice_activation=True
         )
         return discord.utils.oauth_url(
             client_id,
