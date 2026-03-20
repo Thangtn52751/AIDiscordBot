@@ -1,80 +1,131 @@
-# AIDiscordBot
+Ok, mình làm lại thành **1 block duy nhất để bạn copy 1 lần là xong** 👇
 
-Bot Discord tich hop AI chat va phat nhac YouTube trong voice channel.
+````markdown
+# 🤖 AIDiscordBot
 
-## Tinh nang
+> 🚀 Bot Discord tích hợp AI chat và các lệnh tiện ích cơ bản.
 
-- Chat AI voi nguoi dung
-- Phat nhac YouTube bang `/play`
-- Hang cho nhac, pause, resume, skip, stop
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![Discord](https://img.shields.io/badge/Discord-Bot-5865F2)
+![OpenAI](https://img.shields.io/badge/OpenAI-API-green)
+![Status](https://img.shields.io/badge/Status-Active-success)
 
-## Bien moi truong
+---
 
-Can thiet:
+## ✨ Tính năng
 
-- `DISCORD_TOKEN`
-- `OPENAI_API_KEY`
-- `DISCORD_GUILD_ID`
+🔹 **AI Chat thông minh**
+- Chat với bot bằng cách mention
+- Có thể lưu context hội thoại (nếu implement memory)
 
-Tuy chon:
+🔹 **Slash Commands tiện ích**
+- `/help` → Hiển thị danh sách lệnh  
+- `/ping` → Kiểm tra độ trễ bot  
+- `/userinfo` → Thông tin người dùng  
+- `/roll` → Random số 🎲  
+- `/sync` → Đồng bộ lệnh (admin)
 
-- `FFMPEG_PATH`
-- `YTDLP_COOKIEFILE`
-- `YTDLP_COOKIES_FROM_BROWSER`
-- `YTDLP_YOUTUBE_PLAYER_CLIENT`
-- `YTDLP_YOUTUBE_PO_TOKEN`
+---
 
-## Chay local
+## 📦 Cài đặt
+
+### 1. Clone repo
+
+```bash
+git clone https://github.com/Thangtn52751/AIDiscordBot.git
+cd AIDiscordBot
+````
+
+### 2. Cài dependencies
 
 ```bash
 pip install -r requirements.txt
-python main.py
 ```
 
-Neu muon sua nhanh loi YouTube tren may local:
+### 3. Cấu hình biến môi trường
+
+Tạo file `.env`:
 
 ```env
-YTDLP_COOKIES_FROM_BROWSER=edge
+DISCORD_TOKEN=your_discord_token
+OPENAI_API_KEY=your_openai_key
+DISCORD_GUILD_ID=your_guild_id
 ```
 
-## Railway Volume
+---
 
-Khong nen commit `cookies.txt` vao repo. Cach on dinh va an toan hon la dung Railway Volume:
-
-1. Tao Volume trong Railway
-2. Mount vao `/data`
-3. Upload file `cookies.txt` vao volume
-4. Set env:
-
-```env
-YTDLP_COOKIEFILE=/data/cookies.txt
-DISCORD_TOKEN=...
-OPENAI_API_KEY=...
-DISCORD_GUILD_ID=...
-```
-
-## Ghi chu
-
-- Tren Railway, `YTDLP_COOKIES_FROM_BROWSER` khong dung duoc
-- `YTDLP_COOKIEFILE` nen tro toi `/data/cookies.txt` neu dung Volume
-- `cookies.txt` la secret, khong nen push len GitHub
-- Neu cookies van khong du, co the thu them:
-
-```env
-YTDLP_YOUTUBE_PLAYER_CLIENT=mweb
-YTDLP_YOUTUBE_PO_TOKEN=mweb.gvs+YOUR_PO_TOKEN
-```
-
-## Deploy Railway
-
-Repo nay da co san:
-
-- `railway.json`
-- `railpack.json`
-- `nixpacks.toml`
-
-Railway se chay bot bang:
+## ▶️ Chạy bot local
 
 ```bash
 python main.py
 ```
+
+---
+
+## 🚀 Deploy Railway
+
+Project đã có sẵn:
+
+* `railway.json`
+* `railpack.json`
+* `nixpacks.toml`
+
+Railway sẽ tự chạy:
+
+```bash
+python main.py
+```
+
+---
+
+## 🧠 Cách hoạt động
+
+```mermaid
+graph TD
+A[User mention bot] --> B[Discord Bot]
+B --> C[AI Service]
+C --> D[OpenAI API]
+D --> C
+C --> B
+B --> A
+```
+
+---
+
+## 📁 Cấu trúc project
+
+```
+AIDiscordBot/
+│── cogs/            # Slash commands
+│── services/        # AI xử lý chat
+│── core/            # Config, utils
+│── main.py          # Entry point
+│── requirements.txt
+```
+
+---
+
+## ⚠️ Lưu ý
+
+* Không commit `.env`
+* Tránh lộ `DISCORD_TOKEN` & `OPENAI_API_KEY`
+* Railway nên dùng ENV variables
+
+---
+
+## ❤️ Đóng góp
+
+Pull request luôn được chào đón!
+
+```bash
+fork → create branch → commit → push → pull request
+```
+
+---
+
+## 📜 License
+
+MIT License
+
+```
+

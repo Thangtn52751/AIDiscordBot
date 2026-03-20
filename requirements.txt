@@ -1,6 +1,5 @@
-discord.py[voice]>=2.7.1,<2.8
+discord.py>=2.7.1,<2.8
 openai
 python-dotenv
 requests
 duckduckgo-search
-yt-dlp

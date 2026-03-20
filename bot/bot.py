@@ -15,7 +15,6 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.voice_states = True
 
 
 class BoBeoCommandTree(app_commands.CommandTree):
@@ -73,10 +72,20 @@ class BoBeoBot(commands.Bot):
         traceback.print_exception(type(error), error, error.__traceback__)
 
         message = "Lệnh đã gặp lỗi khi chạy."
-        if interaction.response.is_done():
-            await interaction.followup.send(message, ephemeral=True)
-        else:
-            await interaction.response.send_message(message, ephemeral=True)
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(message, ephemeral=True)
+            else:
+                await interaction.response.send_message(message, ephemeral=True)
+        except discord.DiscordException as notify_error:
+            error_code = getattr(notify_error, "code", None)
+            if error_code in {10062, 40060}:
+                print(
+                    "Slash error response skipped because interaction is no longer valid "
+                    f"(code={error_code})."
+                )
+                return
+            print(f"Failed to send slash error response: {notify_error}")
 
     def get_invite_url(self) -> str | None:
         client_id = self.application_id or (self.user.id if self.user else None)
@@ -88,10 +97,7 @@ class BoBeoBot(commands.Bot):
             send_messages=True,
             embed_links=True,
             attach_files=True,
-            read_message_history=True,
-            connect=True,
-            speak=True,
-            use_voice_activation=True
+            read_message_history=True
         )
         return discord.utils.oauth_url(
             client_id,

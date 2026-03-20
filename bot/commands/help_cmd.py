@@ -9,73 +9,52 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Xem danh sách các lệnh"
+        description="Xem danh sach cac lenh"
     )
     async def help_command(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
 
         embed = discord.Embed(
-            title="📖 Trung tâm trợ giúp - Bo Béo",
+            title="Trung tam tro giup - Bo Beo",
             description=(
-                "✨ **Danh sách lệnh hiện có của bot**\n"
-                "Sử dụng bot để giải trí 🎮 hoặc nghe nhạc 🎵\n\n"
-                "👉 Dùng `/` để xem nhanh tất cả lệnh"
+                "Danh sach lenh hien co cua bot.\n"
+                "Dung / de xem nhanh tat ca lenh."
             ),
-            color=discord.Color.from_rgb(88, 101, 242)  # màu Discord đẹp hơn blurple mặc định
+            color=discord.Color.from_rgb(88, 101, 242)
         )
 
-        # ===== LỆNH CƠ BẢN =====
         embed.add_field(
-            name="⚙️ Lệnh cơ bản",
+            name="Lenh co ban",
             value=(
-                "• `/help` → Xem danh sách lệnh\n"
-                "• `/ping` → Kiểm tra độ trễ bot"
+                "- /help: Xem danh sach lenh\n"
+                "- /ping: Kiem tra do tre bot"
             ),
             inline=False
         )
 
-        # ===== USER =====
         embed.add_field(
-            name="👤 Thông tin người dùng",
-            value="• `/userinfo` → Xem thông tin thành viên",
+            name="Thong tin nguoi dung",
+            value="- /userinfo: Xem thong tin thanh vien",
             inline=False
         )
 
-        # ===== GIẢI TRÍ =====
         embed.add_field(
-            name="🎲 Giải trí",
-            value="• `/roll` → Tung xúc sắc (1-6)",
+            name="Giai tri",
+            value="- /roll: Tung xuc xac (1-6)",
             inline=False
         )
 
-        # ===== ÂM NHẠC =====
         embed.add_field(
-            name="🎵 Âm nhạc",
-            value=(
-                "• `/play` → Phát nhạc từ tên/link\n"
-                "• `/queue` → Xem hàng chờ\n"
-                "• `/pause` → Tạm dừng\n"
-                "• `/resume` → Tiếp tục\n"
-                "• `/skip` → Bỏ qua\n"
-                "• `/stop` → Dừng nhạc"
-            ),
+            name="Quan tri",
+            value="- /sync: Dong bo lenh trong server",
             inline=False
         )
 
-        # ===== ADMIN =====
-        embed.add_field(
-            name="🛠️ Quản trị",
-            value="• `/sync` → Đồng bộ lệnh trong server",
-            inline=False
-        )
-
-        # ===== FOOTER =====
         embed.set_footer(
             text=f"Requested by {interaction.user}",
             icon_url=interaction.user.display_avatar.url
         )
 
-        # ===== AVATAR BOT =====
         if self.bot.user:
             embed.set_thumbnail(url=self.bot.user.display_avatar.url)
             embed.set_author(
