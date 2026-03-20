@@ -1,10 +1,12 @@
 import os
 from typing import Any, Mapping
+
+from bot.paths import PROJECT_ROOT
 from dotenv import load_dotenv
 from openai import OpenAI
 
 # Load environment variables
-load_dotenv()
+load_dotenv(PROJECT_ROOT / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 

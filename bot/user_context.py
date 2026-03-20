@@ -1,9 +1,7 @@
 import json
-from pathlib import Path
 from typing import Any
 
-
-USER_PROFILES_PATH = Path("data/user_profiles.json")
+from bot.paths import USER_PROFILES_PATH
 
 
 def load_user_profiles() -> dict[str, dict[str, str]]:

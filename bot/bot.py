@@ -5,12 +5,13 @@ import traceback
 import discord
 from ai.llm_client import ask_ai
 from ai.llm_client import ask_ai_with_image
+from bot.paths import COMMANDS_DIR, PERSONALITY_PATH, PROJECT_ROOT
 from bot.user_context import build_message_context, load_user_profiles
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(PROJECT_ROOT / ".env")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -33,8 +34,7 @@ class BoBeoBot(commands.Bot):
             intents=intents,
             tree_cls=BoBeoCommandTree,
         )
-        with open("data/personality.txt", "r", encoding="utf-8") as f:
-            self.personality = f.read()
+        self.personality = PERSONALITY_PATH.read_text(encoding="utf-8")
         self.user_profiles = load_user_profiles()
         self.guild_id = os.getenv("DISCORD_GUILD_ID")
 
@@ -161,6 +161,6 @@ async def on_message(message):
 
 async def load_commands(bot):
 
-    for filename in os.listdir("./bot/commands"):
-        if filename.endswith(".py") and filename != "__init__.py":
-            await bot.load_extension(f"bot.commands.{filename[:-3]}")
+    for command_file in COMMANDS_DIR.glob("*.py"):
+        if command_file.name != "__init__.py":
+            await bot.load_extension(f"bot.commands.{command_file.stem}")
