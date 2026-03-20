@@ -1,6 +1,3 @@
-Ok, mình làm lại thành **1 block duy nhất để bạn copy 1 lần là xong** 👇
-
-````markdown
 # 🤖 AIDiscordBot
 
 > 🚀 Bot Discord tích hợp AI chat và các lệnh tiện ích cơ bản.
@@ -127,5 +124,4 @@ fork → create branch → commit → push → pull request
 
 MIT License
 
-```
 
