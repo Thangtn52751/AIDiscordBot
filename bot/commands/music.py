@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import discord
+from bot.paths import PROJECT_ROOT
 from bot.paths import resolve_cookiefile_path
 from discord import app_commands
 from discord.ext import commands
@@ -287,9 +289,19 @@ class GuildMusicState:
         if env_path:
             return env_path
 
-        bundled = os.path.join("bin", "ffmpeg", "ffmpeg.exe")
-        if os.path.exists(bundled):
-            return bundled
+        bundled_dir = PROJECT_ROOT / "bin" / "ffmpeg"
+        if os.name == "nt":
+            bundled_windows = bundled_dir / "ffmpeg.exe"
+            if bundled_windows.is_file():
+                return str(bundled_windows)
+        else:
+            bundled_linux = bundled_dir / "ffmpeg"
+            if bundled_linux.is_file() and os.access(bundled_linux, os.X_OK):
+                return str(bundled_linux)
+
+        system_ffmpeg = shutil.which("ffmpeg")
+        if system_ffmpeg:
+            return system_ffmpeg
 
         return "ffmpeg"
 
