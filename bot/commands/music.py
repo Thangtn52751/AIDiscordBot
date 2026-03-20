@@ -217,7 +217,28 @@ class GuildMusicState:
         options["http_headers"] = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
+
+        extractor_args = GuildMusicState._build_youtube_extractor_args()
+        if extractor_args:
+            options["extractor_args"] = {"youtube": extractor_args}
+
         return options
+
+    @staticmethod
+    def _build_youtube_extractor_args() -> dict[str, list[str]]:
+        args: dict[str, list[str]] = {}
+
+        player_client = os.getenv("YTDLP_YOUTUBE_PLAYER_CLIENT")
+        if player_client:
+            clients = [item.strip() for item in player_client.split(",") if item.strip()]
+            if clients:
+                args["player_client"] = clients
+
+        po_token = os.getenv("YTDLP_YOUTUBE_PO_TOKEN")
+        if po_token:
+            args["po_token"] = [po_token.strip()]
+
+        return args
 
     @staticmethod
     def _parse_cookies_from_browser(browser_spec: str) -> tuple[str, str | None, str | None, str | None]:
@@ -251,8 +272,9 @@ class GuildMusicState:
             return (
                 "YouTube dang yeu cau xac minh. Hay cung cap cookies cho yt-dlp bang "
                 "`YTDLP_COOKIEFILE=/duong-dan/cookies.txt` hoac "
-                "`YTDLP_COOKIES_FROM_BROWSER=chrome`/`edge`. Tren Railway, nen dung "
-                "`YTDLP_COOKIEFILE` thay vi cookies tu browser."
+                "`YTDLP_COOKIES_FROM_BROWSER=chrome`/`edge`. Neu van loi, thu them "
+                "`YTDLP_YOUTUBE_PLAYER_CLIENT=mweb` va `YTDLP_YOUTUBE_PO_TOKEN=...`. "
+                "Tren Railway, nen dung `YTDLP_COOKIEFILE` thay vi cookies tu browser."
             )
         return message
 

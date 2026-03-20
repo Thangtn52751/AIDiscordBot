@@ -18,7 +18,7 @@ def load_user_profiles() -> dict[str, dict[str, str]]:
 
     if not isinstance(data, dict):
         return {}
-
+    
     profiles: dict[str, dict[str, str]] = {}
     for user_id, profile in data.items():
         if isinstance(profile, dict):

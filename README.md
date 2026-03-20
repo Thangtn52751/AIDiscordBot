@@ -21,6 +21,8 @@ Tuy chon:
 - `FFMPEG_PATH`
 - `YTDLP_COOKIEFILE`
 - `YTDLP_COOKIES_FROM_BROWSER`
+- `YTDLP_YOUTUBE_PLAYER_CLIENT`
+- `YTDLP_YOUTUBE_PO_TOKEN`
 
 ## Chay local
 
@@ -56,6 +58,12 @@ DISCORD_GUILD_ID=...
 - Tren Railway, `YTDLP_COOKIES_FROM_BROWSER` khong dung duoc
 - `YTDLP_COOKIEFILE` nen tro toi `/data/cookies.txt` neu dung Volume
 - `cookies.txt` la secret, khong nen push len GitHub
+- Neu cookies van khong du, co the thu them:
+
+```env
+YTDLP_YOUTUBE_PLAYER_CLIENT=mweb
+YTDLP_YOUTUBE_PO_TOKEN=mweb.gvs+YOUR_PO_TOKEN
+```
 
 ## Deploy Railway
 
