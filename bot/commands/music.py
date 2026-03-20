@@ -28,6 +28,7 @@ YTDLP_OPTIONS = {
     "default_search": "ytsearch1",
     "quiet": True,
     "no_warnings": True,
+    "ignoreerrors": True,
 }
 
 FFMPEG_OPTIONS = {
@@ -187,10 +188,13 @@ class GuildMusicState:
     @staticmethod
     def _extract_info(query: str) -> dict:
         options = GuildMusicState._build_ytdlp_options()
+        extract_query = query
+        if not is_probable_url(query):
+            extract_query = f"ytsearch5:{query}"
 
         try:
             with YoutubeDL(options) as ytdl:
-                info = ytdl.extract_info(query, download=False)
+                info = ytdl.extract_info(extract_query, download=False)
         except Exception as exc:
             raise RuntimeError(GuildMusicState._format_ytdlp_error(exc)) from exc
 
@@ -277,9 +281,16 @@ class GuildMusicState:
     @staticmethod
     def _format_ytdlp_error(exc: Exception) -> str:
         message = str(exc)
-        if "Sign in to confirm you’re not a bot" in message or "Sign in to confirm you're not a bot" in message:
+        lowered_message = message.lower()
+        if "video unavailable" in lowered_message or "content isn" in lowered_message:
             return (
-                "Gọi NTT thay token youtube nhanh!!!!"
+                "Video nay hien khong kha dung tren YouTube "
+                "(co the bi an, chan khu vuc, hoac da bi go). "
+                "Thu link khac hoac doi tu khoa tim kiem."
+            )
+        if "Sign in to confirm" in message and "not a bot" in message:
+            return (
+                "Goi NTT thay token youtube nhanh!!!!"
             )
         return message
 
