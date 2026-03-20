@@ -31,6 +31,12 @@ YTDLP_OPTIONS = {
     "ignoreerrors": True,
 }
 
+YTDLP_STREAM_FORMATS = (
+    "bestaudio[acodec!=none]/bestaudio/best",
+    "bestaudio*/best",
+    "best",
+)
+
 FFMPEG_OPTIONS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
     "options": "-vn",
@@ -160,8 +166,20 @@ class GuildMusicState:
         self,
         track: Track,
     ) -> discord.PCMVolumeTransformer[discord.FFmpegPCMAudio]:
-        info = await asyncio.to_thread(self._extract_info, track.webpage_url)
+        info = await asyncio.to_thread(self._extract_info, track.webpage_url, True)
         stream_url = info.get("url")
+        if not stream_url:
+            formats = info.get("formats") or []
+            audio_formats = [
+                fmt for fmt in formats
+                if fmt.get("url") and fmt.get("acodec") not in (None, "none")
+            ]
+            if audio_formats:
+                best_audio = max(
+                    audio_formats,
+                    key=lambda fmt: (fmt.get("abr") or fmt.get("tbr") or 0),
+                )
+                stream_url = best_audio.get("url")
         if not stream_url:
             raise RuntimeError("Không lấy được audio bài hát")
 
@@ -186,17 +204,38 @@ class GuildMusicState:
             return
 
     @staticmethod
-    def _extract_info(query: str) -> dict:
+    def _extract_info(query: str, prefer_stream: bool = False) -> dict:
         options = GuildMusicState._build_ytdlp_options()
         extract_query = query
         if not is_probable_url(query):
             extract_query = f"ytsearch5:{query}"
 
-        try:
-            with YoutubeDL(options) as ytdl:
-                info = ytdl.extract_info(extract_query, download=False)
-        except Exception as exc:
-            raise RuntimeError(GuildMusicState._format_ytdlp_error(exc)) from exc
+        if prefer_stream:
+            default_format = options.get("format")
+            format_attempts = [fmt for fmt in (default_format, *YTDLP_STREAM_FORMATS) if fmt]
+        else:
+            format_attempts = [None]
+
+        info = None
+        last_exc: Exception | None = None
+        for format_selector in format_attempts:
+            attempt_options = dict(options)
+            if format_selector:
+                attempt_options["format"] = format_selector
+            else:
+                attempt_options.pop("format", None)
+
+            try:
+                with YoutubeDL(attempt_options) as ytdl:
+                    info = ytdl.extract_info(extract_query, download=False)
+                break
+            except Exception as exc:
+                last_exc = exc
+                if not prefer_stream or not GuildMusicState._is_requested_format_error(exc):
+                    raise RuntimeError(GuildMusicState._format_ytdlp_error(exc)) from exc
+
+        if info is None and last_exc is not None:
+            raise RuntimeError(GuildMusicState._format_ytdlp_error(last_exc))
 
         if info is None:
             raise RuntimeError("Không tìm thấy kết quả")
@@ -293,6 +332,10 @@ class GuildMusicState:
                 "Goi NTT thay token youtube nhanh!!!!"
             )
         return message
+
+    @staticmethod
+    def _is_requested_format_error(exc: Exception) -> bool:
+        return "requested format is not available" in str(exc).lower()
 
     @staticmethod
     def _resolve_ffmpeg_executable() -> str:
