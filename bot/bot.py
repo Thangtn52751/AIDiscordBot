@@ -166,7 +166,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 async def load_commands(bot):
-
+    
     for command_file in COMMANDS_DIR.glob("*.py"):
         if command_file.name != "__init__.py":
             await bot.load_extension(f"bot.commands.{command_file.stem}")
