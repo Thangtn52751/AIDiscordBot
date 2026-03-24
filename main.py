@@ -1,12 +1,8 @@
 import os
 import sys
 import atexit
-from pathlib import Path
-
-try:
-    import msvcrt
-except ImportError:  # pragma: no cover
-    msvcrt = None
+import ctypes
+from ctypes import wintypes
 
 from bot.paths import PROJECT_ROOT
 from dotenv import load_dotenv
@@ -14,44 +10,43 @@ load_dotenv(PROJECT_ROOT / ".env")
 from bot.bot import bot
 
 
-LOCK_FILE: Path = PROJECT_ROOT / ".bot.lock"
-LOCK_HANDLE = None
+MUTEX_NAME = "Local\\BoBeoDSBotMain"
+ERROR_ALREADY_EXISTS = 183
+MUTEX_HANDLE = None
+CHILD_GUARD_ENV = "BOBEO_BOT_ACTIVE"
 
 
 def acquire_single_instance_lock() -> None:
-    global LOCK_HANDLE
+    global MUTEX_HANDLE
 
-    if msvcrt is None:
+    if os.name != "nt":
         return
 
-    LOCK_FILE.touch(exist_ok=True)
-    lock_handle = LOCK_FILE.open("r+")
+    kernel32 = ctypes.windll.kernel32
+    kernel32.CreateMutexW.argtypes = (wintypes.LPVOID, wintypes.BOOL, wintypes.LPCWSTR)
+    kernel32.CreateMutexW.restype = wintypes.HANDLE
+    kernel32.GetLastError.restype = wintypes.DWORD
 
-    try:
-        msvcrt.locking(lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
-    except OSError:
+    mutex_handle = kernel32.CreateMutexW(None, False, MUTEX_NAME)
+    if not mutex_handle:
+        raise OSError("Failed to create Windows mutex for bot instance lock.")
+
+    if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+        kernel32.CloseHandle(mutex_handle)
         print("Bot is already running. Stop the other instance before starting a new one.")
-        lock_handle.close()
         sys.exit(1)
 
-    LOCK_HANDLE = lock_handle
+    MUTEX_HANDLE = mutex_handle
 
 
 def release_single_instance_lock() -> None:
-    global LOCK_HANDLE
+    global MUTEX_HANDLE
 
-    if LOCK_HANDLE is None:
+    if MUTEX_HANDLE is None or os.name != "nt":
         return
 
-    try:
-        if msvcrt is not None:
-            LOCK_HANDLE.seek(0)
-            msvcrt.locking(LOCK_HANDLE.fileno(), msvcrt.LK_UNLCK, 1)
-    except OSError:
-        pass
-    finally:
-        LOCK_HANDLE.close()
-        LOCK_HANDLE = None
+    ctypes.windll.kernel32.CloseHandle(MUTEX_HANDLE)
+    MUTEX_HANDLE = None
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
@@ -59,6 +54,11 @@ if not TOKEN:
 
 
 def main() -> None:
+    if os.getenv(CHILD_GUARD_ENV) == "1":
+        print("Detected duplicate bot bootstrap. Exiting child process.")
+        sys.exit(0)
+
+    os.environ[CHILD_GUARD_ENV] = "1"
     acquire_single_instance_lock()
     atexit.register(release_single_instance_lock)
     print("Bot is starting...")

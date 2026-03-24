@@ -144,7 +144,7 @@ bot = BoBeoBot()
 
 @bot.event
 async def on_ready():
-    print(f"Bot logged in as {bot.user}")
+    print(f"Bot logged in as {bot.user} (pid={os.getpid()})")
     invite_url = bot.get_invite_url()
     if invite_url:
         print(f"Invite URL: {invite_url}")
