@@ -43,8 +43,6 @@ class BoBeoBot(commands.Bot):
         if self.guild_id:
             guild = discord.Object(id=int(self.guild_id))
             try:
-                # Commands are defined as global app commands, so copy them into the
-                # target guild set before syncing for fast guild-scoped updates.
                 self.tree.copy_global_to(guild=guild)
                 synced = await self.tree.sync(guild=guild)
                 print(
@@ -71,7 +69,14 @@ class BoBeoBot(commands.Bot):
         print(f"Slash command error in /{command_name}: {error}")
         traceback.print_exception(type(error), error, error.__traceback__)
 
-        message = "Lệnh đã gặp lỗi khi chạy."
+        if self._should_suppress_interaction_error(interaction, error):
+            print(
+                "Slash error notification suppressed because the interaction "
+                "was already acknowledged elsewhere."
+            )
+            return
+
+        message = "Đang tính."
         try:
             if interaction.response.is_done():
                 await interaction.followup.send(message, ephemeral=True)
@@ -87,6 +92,34 @@ class BoBeoBot(commands.Bot):
                 return
             print(f"Failed to send slash error response: {notify_error}")
 
+    @staticmethod
+    def _extract_error_code(error: BaseException) -> int | None:
+        current_error: BaseException | None = error
+
+        while current_error is not None:
+            error_code = getattr(current_error, "code", None)
+            if isinstance(error_code, int):
+                return error_code
+            current_error = getattr(current_error, "original", None) or getattr(
+                current_error,
+                "__cause__",
+                None,
+            )
+
+        return None
+
+    def _should_suppress_interaction_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> bool:
+        error_code = self._extract_error_code(error)
+        if error_code in {40060, 10062}:
+            return True
+
+        interaction_type = getattr(interaction, "type", None)
+        return interaction_type == discord.InteractionType.autocomplete
+
     def get_invite_url(self) -> str | None:
         client_id = self.application_id or (self.user.id if self.user else None)
         if not client_id:
@@ -97,12 +130,12 @@ class BoBeoBot(commands.Bot):
             send_messages=True,
             embed_links=True,
             attach_files=True,
-            read_message_history=True
+            read_message_history=True,
         )
         return discord.utils.oauth_url(
             client_id,
             permissions=permissions,
-            scopes=("bot", "applications.commands")
+            scopes=("bot", "applications.commands"),
         )
 
 
@@ -116,29 +149,24 @@ async def on_ready():
     if invite_url:
         print(f"Invite URL: {invite_url}")
 
+
 @bot.event
 async def on_message(message):
-
     if message.author.bot:
         return
 
     if bot.user in message.mentions:
-
         content = message.content.replace(f"<@{bot.user.id}>", "").strip()
         user_context = build_message_context(
             message.author,
             list(message.mentions),
             bot.user,
-            bot.user_profiles
+            bot.user_profiles,
         )
 
         try:
-
             async with message.channel.typing():
-
-                # nếu user gửi ảnh
                 if message.attachments:
-
                     image_url = message.attachments[0].url
 
                     response = await asyncio.to_thread(
@@ -146,27 +174,26 @@ async def on_message(message):
                         bot.personality,
                         content,
                         image_url,
-                        user_context
+                        user_context,
                     )
-
                 else:
                     response = await asyncio.to_thread(
                         ask_ai,
                         bot.personality,
                         content,
-                        user_context
+                        user_context,
                     )
 
             await message.channel.send(response)
 
-        except Exception as e:
-            print("ERROR:", e)
+        except Exception as error:
+            print("ERROR:", error)
             await message.channel.send("AI error occurred.")
 
     await bot.process_commands(message)
 
+
 async def load_commands(bot):
-    
     for command_file in COMMANDS_DIR.glob("*.py"):
         if command_file.name != "__init__.py":
             await bot.load_extension(f"bot.commands.{command_file.stem}")

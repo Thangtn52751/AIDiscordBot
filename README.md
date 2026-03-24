@@ -20,6 +20,7 @@
 - `/ping` → Kiểm tra độ trễ bot  
 - `/userinfo` → Thông tin người dùng  
 - `/roll` → Random số 🎲  
+- `/countdown` → Đếm ngược sự kiện  
 - `/sync` → Đồng bộ lệnh (admin)
 
 ---
@@ -123,5 +124,4 @@ fork → create branch → commit → push → pull request
 ## 📜 License
 
 MIT License
-
 

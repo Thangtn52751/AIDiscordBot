@@ -1,4 +1,7 @@
-from duckduckgo_search import DDGS
+try:
+    from ddgs import DDGS
+except ImportError:  # pragma: no cover
+    from duckduckgo_search import DDGS
 
 
 def search_web(query: str, max_results: int = 5):
@@ -12,9 +15,9 @@ def search_web(query: str, max_results: int = 5):
         with DDGS() as ddgs:
             for r in ddgs.text(query, max_results=max_results):
                 results.append({
-                    "title": r["title"],
-                    "link": r["href"],
-                    "snippet": r["body"]
+                    "title": r.get("title", ""),
+                    "link": r.get("href", ""),
+                    "snippet": r.get("body", "")
                 })
 
         return results

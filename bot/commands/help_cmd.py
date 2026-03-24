@@ -9,44 +9,45 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Xem danh sach cac lenh"
+        description="Xem danh sách các lệnh"
     )
     async def help_command(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
 
         embed = discord.Embed(
-            title="Trung tam tro giup - Bo Beo",
+            title="Trung tâm lệnh của Bo Béo",
             description=(
-                "Danh sach lenh hien co cua bot.\n"
-                "Dung / de xem nhanh tat ca lenh."
+                "Danh sách các lệnh của bot.\n"
+                "Dùng / trỏ vào Bo Béo để xem tất cả các lệnh."
             ),
             color=discord.Color.from_rgb(88, 101, 242)
         )
 
         embed.add_field(
-            name="Lenh co ban",
+            name="Lệnh cơ bản",
             value=(
-                "- /help: Xem danh sach lenh\n"
-                "- /ping: Kiem tra do tre bot"
+                "- /help: Xem danh sách các lệnh (Bạn vừa dùng xong)\n"
+                "- /ping: Kiểm tra độ trễ của bot\n"
+                "- /countdown: Đếm ngược sự kiên"
             ),
             inline=False
         )
 
         embed.add_field(
-            name="Thong tin nguoi dung",
-            value="- /userinfo: Xem thong tin thanh vien",
+            name="Thông tin người dùng",
+            value="- /userinfo: Xem thông tin người dùng",
             inline=False
         )
 
         embed.add_field(
-            name="Giai tri",
-            value="- /roll: Tung xuc xac (1-6)",
+            name="Giải trí",
+            value="- /roll: Tung xúc sắc (1-6)",
             inline=False
         )
 
         embed.add_field(
-            name="Quan tri",
-            value="- /sync: Dong bo lenh trong server",
+            name="Quản trị",
+            value="- /sync: Đồng bộ lại lệnh trong server",
             inline=False
         )
 
