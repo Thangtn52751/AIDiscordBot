@@ -1,12 +1,14 @@
-import os
-import sys
 import atexit
 import ctypes
+import os
+import sys
 from ctypes import wintypes
 
 from bot.paths import PROJECT_ROOT
 from dotenv import load_dotenv
+
 load_dotenv(PROJECT_ROOT / ".env")
+
 from bot.bot import bot
 
 
@@ -29,11 +31,11 @@ def acquire_single_instance_lock() -> None:
 
     mutex_handle = kernel32.CreateMutexW(None, False, MUTEX_NAME)
     if not mutex_handle:
-        raise OSError("Failed to create Windows mutex for bot instance lock.")
+        raise OSError("Không tạo được mutex Windows để khóa một instance bot.")
 
     if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
         kernel32.CloseHandle(mutex_handle)
-        print("Bot is already running. Stop the other instance before starting a new one.")
+        print("Bot đang chạy ở một tiến trình khác. Hãy tắt instance cũ trước khi mở mới.")
         sys.exit(1)
 
     MUTEX_HANDLE = mutex_handle
@@ -48,20 +50,21 @@ def release_single_instance_lock() -> None:
     ctypes.windll.kernel32.CloseHandle(MUTEX_HANDLE)
     MUTEX_HANDLE = None
 
+
 TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
-    raise RuntimeError("DISCORD_TOKEN is not set")
+    raise RuntimeError("Thiếu biến môi trường DISCORD_TOKEN")
 
 
 def main() -> None:
     if os.getenv(CHILD_GUARD_ENV) == "1":
-        print("Detected duplicate bot bootstrap. Exiting child process.")
+        print("Phát hiện tiến trình bot bị khởi động lặp. Đang thoát tiến trình con.")
         sys.exit(0)
 
     os.environ[CHILD_GUARD_ENV] = "1"
     acquire_single_instance_lock()
     atexit.register(release_single_instance_lock)
-    print("Bot is starting...")
+    print("Bot đang khởi động...")
     bot.run(TOKEN)
 
 

@@ -5,12 +5,12 @@ from bot.paths import PROJECT_ROOT
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Load environment variables
+# Tải biến môi trường
 load_dotenv(PROJECT_ROOT / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Create OpenAI client
+# Khởi tạo OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -50,9 +50,9 @@ def _build_image_instruction(message: str) -> str:
         "Nhiệm vụ:",
         "- Mô tả nhanh những thứ trong ảnh.",
         "- Trả lời ngắn gọn, đúng tone nhân vật.",
-        "- Không phân tích quá chuyên sâu, trả lời ngắn gọn.",
-        "- Nếu user hỏi nghề nghiệp trong ảnh, chú ý vào quần áo, cảnh vật xung quanh rồi đưa ra phán đoán 1 cách chắc",
-        "- Nếu user hỏi về địa điểm thì hãy để ý vào công trình, cảnh vật xung quanh rồi đưa ra phán đoán.",
+        "- Không phân tích quá chuyên sâu, chỉ cần súc tích.",
+        "- Nếu user hỏi đoán nghề nghiệp trong ảnh, hãy chú ý quần áo, vật dụng và bối cảnh xung quanh rồi đưa ra phán đoán có chừng mực.",
+        "- Nếu user hỏi về địa điểm, hãy chú ý công trình, cảnh vật và chi tiết xung quanh để đưa ra phán đoán.",
         f"Yêu cầu của user: {user_message}",
     ]
     return "\n".join(lines)
@@ -64,7 +64,7 @@ def ask_ai(
     user_context: Mapping[str, Any] | None = None,
 ) -> str:
     """
-    Chat with AI using text only.
+    Trò chuyện với AI bằng văn bản.
     """
 
     try:
@@ -83,8 +83,8 @@ def ask_ai(
         return response.choices[0].message.content
 
     except Exception as error:
-        print("OpenAI text error:", error)
-        return "AI text error."
+        print("Lỗi OpenAI (text):", error)
+        return "AI văn bản đang gặp lỗi."
 
 
 def ask_ai_with_image(
@@ -94,7 +94,7 @@ def ask_ai_with_image(
     user_context: Mapping[str, Any] | None = None,
 ) -> str:
     """
-    Chat with AI using text + image.
+    Trò chuyện với AI bằng văn bản và ảnh.
     """
 
     try:
@@ -109,7 +109,7 @@ def ask_ai_with_image(
                 "content": [
                     {
                         "type": "text",
-                        "text": message.strip() or "Xem nhanh anh nay.",
+                        "text": message.strip() or "Xem nhanh ảnh này.",
                     },
                     {
                         "type": "image_url",
@@ -131,5 +131,5 @@ def ask_ai_with_image(
         return response.choices[0].message.content
 
     except Exception as error:
-        print("OpenAI image error:", error)
-        return "AI image analysis error."
+        print("Lỗi OpenAI (ảnh):", error)
+        return "AI phân tích ảnh đang gặp lỗi."

@@ -9,7 +9,7 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Xem danh sach cac lenh",
+        description="Xem danh sách các lệnh",
     )
     async def help_command(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -24,7 +24,6 @@ class HelpCommand(commands.Cog):
             color=discord.Color.blurple(),
         )
 
-        # ===== Lệnh cơ bản =====
         embed.add_field(
             name="⚙️ Lệnh cơ bản",
             value=(
@@ -37,7 +36,6 @@ class HelpCommand(commands.Cog):
             inline=False,
         )
 
-        # ===== User =====
         embed.add_field(
             name="👤 Thông tin người dùng",
             value=(
@@ -48,7 +46,6 @@ class HelpCommand(commands.Cog):
             inline=False,
         )
 
-        # ===== Sinh nhật =====
         embed.add_field(
             name="🎂 Sinh nhật",
             value=(
@@ -56,13 +53,12 @@ class HelpCommand(commands.Cog):
                 "/birthday           : Đặt ngày sinh\n"
                 "/birthday_info      : Xem thông tin\n"
                 "/birthday_remove    : Xóa ngày sinh\n"
-                "/birthday_channel   : Set kênh thông báo\n"
+                "/birthday_channel   : Đặt kênh thông báo\n"
                 "```"
             ),
             inline=False,
         )
 
-        # ===== Giải trí =====
         embed.add_field(
             name="🎮 Giải trí",
             value=(
@@ -73,7 +69,6 @@ class HelpCommand(commands.Cog):
             inline=False,
         )
 
-        # ===== Admin =====
         embed.add_field(
             name="🛠️ Quản trị",
             value=(
@@ -85,8 +80,8 @@ class HelpCommand(commands.Cog):
         )
 
         embed.add_field(
-            name="💡 Tip",
-            value="Dùng `/` + tên lệnh để auto hiện hướng dẫn chi tiết!",
+            name="💡 Mẹo",
+            value="Dùng `/` + tên lệnh để Discord tự hiện hướng dẫn chi tiết.",
             inline=False,
         )
 

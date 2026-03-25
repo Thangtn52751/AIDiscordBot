@@ -9,49 +9,96 @@ class UserInfo(commands.Cog):
 
     @app_commands.command(
         name="userinfo",
-        description="Xem thông tin của 1 thành viên."
+        description="Xem thông tin của một thành viên.",
     )
     @app_commands.describe(member="Thành viên bạn muốn xem thông tin")
     async def userinfo(
         self,
         interaction: discord.Interaction,
-        member: discord.Member | None = None
+        member: discord.Member | None = None,
     ) -> None:
         await interaction.response.defer()
 
         member = member or interaction.user
 
+        # 🧠 Format time đẹp hơn
+        created_at = discord.utils.format_dt(member.created_at, style="F")
         joined_at = (
-            member.joined_at.strftime("%d/%m/%Y %H:%M")
+            discord.utils.format_dt(member.joined_at, style="F")
             if member.joined_at else "Không rõ"
         )
-        created_at = member.created_at.strftime("%d/%m/%Y %H:%M")
 
+        # 🎭 Badge đơn giản
+        badges = []
+        if member.bot:
+            badges.append("🤖 Bot")
+        else:
+            badges.append("👤 Thành viên")
+
+        if member.guild_permissions.administrator:
+            badges.append("🛡️ Admin")
+
+        badge_text = " • ".join(badges)
+
+        # 🎨 Color theo role cao nhất
+        color = member.top_role.color if member.top_role.color.value != 0 else discord.Color.blurple()
+
+        # 🎭 Roles
         roles = [role.mention for role in member.roles if role.name != "@everyone"]
         roles_text = self._format_roles(roles)
 
         embed = discord.Embed(
-            title="Thông tin user",
-            description=f"**{member.mention}**",
-            color=discord.Color.blurple()
+            title=f"👤 {member.display_name}",
+            description=f"{member.mention}\n{badge_text}",
+            color=color,
         )
 
+        # 🖼️ Avatar + banner
         embed.set_thumbnail(url=member.display_avatar.url)
-        embed.add_field(name="Username", value=str(member), inline=True)
-        embed.add_field(name="User ID", value=str(member.id), inline=True)
-        embed.add_field(name="Tạo TK", value=created_at, inline=False)
-        embed.add_field(name="Tham gia server", value=joined_at, inline=False)
-        embed.add_field(name="Role cao nhất", value=member.top_role.mention, inline=True)
-        embed.add_field(name="Số lượng role", value=str(len(roles)), inline=True)
-        embed.add_field(name="Danh sách role", value=roles_text, inline=False)
+
+        try:
+            user = await self.bot.fetch_user(member.id)
+            if user.banner:
+                embed.set_image(url=user.banner.url)
+        except:
+            pass
+
+        # 📊 Thông tin chính
+        embed.add_field(
+            name="📌 Thông tin cơ bản",
+            value=(
+                f"**Username:** {member}\n"
+                f"**User ID:** `{member.id}`"
+            ),
+            inline=True,
+        )
+
+        embed.add_field(
+            name="📅 Thời gian",
+            value=(
+                f"**Tạo tài khoản:**\n{created_at}\n\n"
+                f"**Tham gia server:**\n{joined_at}"
+            ),
+            inline=True,
+        )
+
+        # 🎭 Role
+        embed.add_field(
+            name=f"🎭 Roles ({len(roles)})",
+            value=roles_text,
+            inline=False,
+        )
+
+        # 🏆 Role cao nhất
+        embed.add_field(
+            name="🏆 Role cao nhất",
+            value=member.top_role.mention,
+            inline=True,
+        )
 
         embed.set_footer(
             text=f"Yêu cầu bởi {interaction.user}",
-            icon_url=interaction.user.display_avatar.url
-        )
-        embed.set_author(
-            name=str(member),
-            icon_url=member.display_avatar.url
+            icon_url=interaction.user.display_avatar.url,
         )
 
         await interaction.followup.send(embed=embed)
@@ -76,7 +123,7 @@ class UserInfo(commands.Cog):
             current_length += extra_length
 
         hidden_count = len(roles) - len(visible_roles)
-        suffix = f" ... và {hidden_count} role khác" if hidden_count > 0 else ""
+        suffix = f"\n... và {hidden_count} role khác"
         return ", ".join(visible_roles) + suffix
 
 

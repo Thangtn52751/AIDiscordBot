@@ -9,14 +9,14 @@ class Sync(commands.Cog):
 
     @app_commands.command(
         name="sync",
-        description="Dong bo lai slash command trong server."
+        description="Đồng bộ lại slash command trong server.",
     )
     @app_commands.default_permissions(administrator=True)
     async def sync(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             await self._send_message(
                 interaction,
-                "Lenh nay chi duoc dung trong server.",
+                "Lệnh này chỉ được dùng trong server.",
                 ephemeral=True,
             )
             return
@@ -28,7 +28,7 @@ class Sync(commands.Cog):
 
         await self._send_message(
             interaction,
-            f"Da dong bo {len(synced)} slash command cho server nay.",
+            f"Đã đồng bộ {len(synced)} slash command cho server này.",
             ephemeral=True,
         )
 

@@ -15,11 +15,11 @@ class Countdown(commands.Cog):
 
     @app_commands.command(
         name="countdown",
-        description="Đếm ngược 1 sự kiện"
+        description="Đếm ngược một sự kiện",
     )
     @app_commands.describe(
-        event="Tên sự kiện, VD: Tết, Noel, New Year",
-        ngay="Ngày tùy chọn theo định dạng dd/mm/yyyy hoặc yyyy-mm-dd"
+        event="Tên sự kiện, ví dụ: Tết, Noel, New Year",
+        ngay="Ngày tùy chọn theo định dạng dd/mm/yyyy hoặc yyyy-mm-dd",
     )
     async def countdown(
         self,
@@ -35,7 +35,7 @@ class Countdown(commands.Cog):
             if custom_date is None:
                 await self._send_message(
                     interaction,
-                    "Nhập ngày không đúng định dạng, đinh dạng đúng: `dd/mm/yyyy` hoac `yyyy-mm-dd`.",
+                    "Nhập ngày không đúng định dạng, định dạng đúng là `dd/mm/yyyy` hoặc `yyyy-mm-dd`.",
                     ephemeral=True,
                 )
                 return
@@ -52,7 +52,7 @@ class Countdown(commands.Cog):
             await self._send_message(
                 interaction,
                 f"Mình không tìm thấy sự kiện `{event}`. "
-                f"Bạn có thể tìm mấy sự kiện nổi như: {supported}, "
+                f"Bạn có thể thử các sự kiện phổ biến như: {supported}, "
                 "hoặc thêm `ngày` để tự đặt sự kiện.",
                 ephemeral=True,
             )
@@ -84,7 +84,7 @@ class Countdown(commands.Cog):
             )
 
         embed = discord.Embed(
-            title="Countdown Event",
+            title="Đếm ngược sự kiện",
             description=description,
             color=result.color,
         )

@@ -211,8 +211,8 @@ class BirthdayStore:
         resolved_path = self.path.resolve()
         running_on_railway = bool(os.getenv("RAILWAY_PROJECT_ID"))
         print(
-            "[birthday] storage path: "
-            f"{resolved_path} | exists={self.path.exists()} | railway={running_on_railway}"
+            "[birthday] đường dẫn lưu trữ: "
+            f"{resolved_path} | tồn tại={self.path.exists()} | railway={running_on_railway}"
         )
 
     def _get_or_create_user(self, user_id: int | str) -> dict[str, int] | None:
