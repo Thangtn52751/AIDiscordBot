@@ -134,8 +134,8 @@ TET_DATES = {
 
 SUPPORTED_EVENTS = (
     CountdownEvent(
-        name="Tet",
-        aliases=("tet nguyen dan", "tet am", "tet lunar"),
+        name="Tết",
+        aliases=("tết nguyên đán", "tết âm"),
         emoji="🧧",
         description="Tết nguyên đán",
         color=0xE53935,
@@ -143,7 +143,7 @@ SUPPORTED_EVENTS = (
     ),
     CountdownEvent(
         name="New Year",
-        aliases=("nam moi", "tet duong", "duong lich"),
+        aliases=("năm mới", "tết dương"),
         emoji="🎆",
         description="Năm mới",
         color=0x1E88E5,
