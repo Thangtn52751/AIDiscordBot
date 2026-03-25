@@ -9,58 +9,69 @@ class HelpCommand(commands.Cog):
 
     @app_commands.command(
         name="help",
-        description="Xem danh sách các lệnh"
+        description="Xem danh sach cac lenh",
     )
     async def help_command(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
 
         embed = discord.Embed(
-            title="Trung tâm lệnh của Bo Béo",
+            title="Trung tam lenh cua Bo Beo",
             description=(
-                "Danh sách các lệnh của bot.\n"
-                "Dùng / trỏ vào Bo Béo để xem tất cả các lệnh."
+                "Danh sach cac lenh hien co cua bot.\n"
+                "Go `/` trong Discord de xem nhanh tung lenh."
             ),
-            color=discord.Color.from_rgb(88, 101, 242)
+            color=discord.Color.from_rgb(88, 101, 242),
         )
 
         embed.add_field(
-            name="Lệnh cơ bản",
+            name="Lenh co ban",
             value=(
-                "- /help: Xem danh sách các lệnh (Bạn vừa dùng xong)\n"
-                "- /ping: Kiểm tra độ trễ của bot\n"
-                "- /countdown: Đếm ngược sự kiên"
+                "- /help: Xem danh sach cac lenh\n"
+                "- /ping: Kiem tra do tre cua bot\n"
+                "- /countdown: Dem nguoc su kien"
             ),
-            inline=False
+            inline=False,
         )
 
         embed.add_field(
-            name="Thông tin người dùng",
-            value="- /userinfo: Xem thông tin người dùng",
-            inline=False
+            name="Thong tin nguoi dung",
+            value="- /userinfo: Xem thong tin nguoi dung",
+            inline=False,
         )
 
         embed.add_field(
-            name="Giải trí",
-            value="- /roll: Tung xúc sắc (1-6)",
-            inline=False
+            name="Sinh nhat",
+            value=(
+                "- /birthday set: Tu dat ngay sinh cua ban\n"
+                "- /birthday info: Xem ngay sinh va kenh thong bao\n"
+                "- /birthday remove: Xoa ngay sinh da luu\n"
+                "- /birthday channel: Admin set kenh gui thong bao"
+            ),
+            inline=False,
         )
 
         embed.add_field(
-            name="Quản trị",
-            value="- /sync: Đồng bộ lại lệnh trong server",
-            inline=False
+            name="Giai tri",
+            value="- /roll: Tung xuc xac (1-6)",
+            inline=False,
+        )
+
+        embed.add_field(
+            name="Quan tri",
+            value="- /sync: Dong bo lai lenh trong server",
+            inline=False,
         )
 
         embed.set_footer(
             text=f"Requested by {interaction.user}",
-            icon_url=interaction.user.display_avatar.url
+            icon_url=interaction.user.display_avatar.url,
         )
 
         if self.bot.user:
             embed.set_thumbnail(url=self.bot.user.display_avatar.url)
             embed.set_author(
-                name=f"{self.bot.user.name}",
-                icon_url=self.bot.user.display_avatar.url
+                name=self.bot.user.name,
+                icon_url=self.bot.user.display_avatar.url,
             )
 
         await interaction.followup.send(embed=embed, ephemeral=True)
