@@ -15,55 +15,83 @@ class HelpCommand(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         embed = discord.Embed(
-            title="Trung tam lenh cua Bo Beo",
+            title="📚 Trung Tâm Lệnh - Béo Bot",
             description=(
-                "Danh sach cac lenh hien co cua bot.\n"
-                "Go `/` trong Discord de xem nhanh tung lenh."
+                "✨ **Danh sách tất cả lệnh của bot**\n"
+                "👉 Gõ `/` để xem nhanh từng lệnh trong Discord\n\n"
+                "━━━━━━━━━━━━━━━━━━"
             ),
-            color=discord.Color.from_rgb(88, 101, 242),
+            color=discord.Color.blurple(),
         )
 
+        # ===== Lệnh cơ bản =====
         embed.add_field(
-            name="Lenh co ban",
+            name="⚙️ Lệnh cơ bản",
             value=(
-                "- /help: Xem danh sach cac lenh\n"
-                "- /ping: Kiem tra do tre cua bot\n"
-                "- /countdown: Dem nguoc su kien"
+                "```yaml\n"
+                "/help        : Xem danh sách lệnh\n"
+                "/ping        : Kiểm tra độ trễ\n"
+                "/countdown   : Đếm ngược sự kiện\n"
+                "```"
             ),
             inline=False,
         )
 
+        # ===== User =====
         embed.add_field(
-            name="Thong tin nguoi dung",
-            value="- /userinfo: Xem thong tin nguoi dung",
-            inline=False,
-        )
-
-        embed.add_field(
-            name="Sinh nhat",
+            name="👤 Thông tin người dùng",
             value=(
-                "- /birthday set: Tu dat ngay sinh cua ban\n"
-                "- /birthday info: Xem ngay sinh va kenh thong bao\n"
-                "- /birthday remove: Xoa ngay sinh da luu\n"
-                "- /birthday channel: Admin set kenh gui thong bao"
+                "```yaml\n"
+                "/userinfo    : Xem thông tin người dùng\n"
+                "```"
+            ),
+            inline=False,
+        )
+
+        # ===== Sinh nhật =====
+        embed.add_field(
+            name="🎂 Sinh nhật",
+            value=(
+                "```yaml\n"
+                "/birthday           : Đặt ngày sinh\n"
+                "/birthday_info      : Xem thông tin\n"
+                "/birthday_remove    : Xóa ngày sinh\n"
+                "/birthday_channel   : Set kênh thông báo\n"
+                "```"
+            ),
+            inline=False,
+        )
+
+        # ===== Giải trí =====
+        embed.add_field(
+            name="🎮 Giải trí",
+            value=(
+                "```yaml\n"
+                "/roll        : Tung xúc xắc\n"
+                "```"
+            ),
+            inline=False,
+        )
+
+        # ===== Admin =====
+        embed.add_field(
+            name="🛠️ Quản trị",
+            value=(
+                "```yaml\n"
+                "/sync        : Đồng bộ lệnh\n"
+                "```"
             ),
             inline=False,
         )
 
         embed.add_field(
-            name="Giai tri",
-            value="- /roll: Tung xuc xac (1-6)",
-            inline=False,
-        )
-
-        embed.add_field(
-            name="Quan tri",
-            value="- /sync: Dong bo lai lenh trong server",
+            name="💡 Tip",
+            value="Dùng `/` + tên lệnh để auto hiện hướng dẫn chi tiết!",
             inline=False,
         )
 
         embed.set_footer(
-            text=f"Requested by {interaction.user}",
+            text=f"Yêu cầu bởi {interaction.user}",
             icon_url=interaction.user.display_avatar.url,
         )
 

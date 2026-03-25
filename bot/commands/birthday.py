@@ -10,11 +10,6 @@ from discord.ext import commands, tasks
 
 
 class Birthday(commands.Cog):
-    birthday = app_commands.Group(
-        name="birthday",
-        description="Quản lý sinh nhật trong Server.",
-    )
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.store = BirthdayStore()
@@ -32,17 +27,17 @@ class Birthday(commands.Cog):
         if isinstance(error, app_commands.MissingPermissions):
             await self._send_message(
                 interaction,
-                "Bạn cần quyền `Manage Server` để dùng lệnh này.",
+                "Ban can quyen `Manage Server` de dung lenh nay.",
                 ephemeral=True,
             )
             return
 
         raise error
 
-    @birthday.command(name="set", description="Đặt ngày sinh của bạn.")
+    @app_commands.command(name="birthday", description="Dat ngay sinh cua ban.")
     @app_commands.describe(
-        day="Ngày sinh của bạn",
-        month="Tháng sinh của bạn",
+        day="Ngay sinh cua ban",
+        month="Thang sinh cua ban",
     )
     async def birthday_set(
         self,
@@ -53,7 +48,7 @@ class Birthday(commands.Cog):
         if interaction.guild is None:
             await self._send_message(
                 interaction,
-                "Lệnh này chỉ được dùng trong SV tấu hài cùng Bo Béo.",
+                "Lenh nay chi duoc dung trong server.",
                 ephemeral=True,
             )
             return
@@ -61,7 +56,7 @@ class Birthday(commands.Cog):
         if not is_valid_birthday(day, month):
             await self._send_message(
                 interaction,
-                "Ngày sinh không hợp lệ. Ví dụ hợp lệ: 25/03, 29/02.",
+                "Ngay sinh khong hop le. Vi du hop le: 25/03, 29/02.",
                 ephemeral=True,
             )
             return
@@ -109,7 +104,7 @@ class Birthday(commands.Cog):
 
         if channel_id is None:
             channel_text = (
-                "Chưa có kênh thông báo. Admin hãy dùng `/birthday channel` để set kênh."
+                "Chua co kenh thong bao. Admin hay dung `/birthday_channel` de set kenh."
             )
         else:
             channel_text = f"<#{channel_id}>"
@@ -117,57 +112,28 @@ class Birthday(commands.Cog):
         extra_message = ""
         if day == today.day and month == today.month:
             if channel_id is None:
-                extra_message = "\nHôm nay là sinh nhật của bạn nhưng server chưa set thông báo."
+                extra_message = "\nHom nay la sinh nhat cua ban nhung server chua set kenh thong bao."
             elif announced_immediately:
-                extra_message = "\nMình đã gửi thông báo sinh nhật."
+                extra_message = "\nMinh da gui thong bao sinh nhat ngay bay gio."
             else:
-                extra_message = "\nHôm nay là sinh nhật của bạn, nhưng server chưa set thông báo nên mình chưa được gửi."
+                extra_message = "\nHom nay la sinh nhat cua ban, nhung minh chua gui duoc thong bao vao kenh da set."
 
         await self._send_message(
             interaction,
             (
-                f"Đã lưu sinh nhật của bạn: **{format_birthday(day, month)}**.\n"
-                f"Kênh thông tin hiện tại: {channel_text}"
+                f"Da luu sinh nhat cua ban: **{format_birthday(day, month)}**.\n"
+                f"Kenh thong bao hien tai: {channel_text}"
                 f"{extra_message}"
             ),
             ephemeral=True,
         )
 
-    @birthday.command(name="remove", description="Xóa ngày sinh nhật đã lưu của bạn.")
-    async def birthday_remove(self, interaction: discord.Interaction) -> None:
-        if interaction.guild is None:
-            await self._send_message(
-                interaction,
-                "Lệnh này chỉ được dùng trong server tấu hài cùng Bo Béo.",
-                ephemeral=True,
-            )
-            return
-
-        await self._safe_defer(interaction, ephemeral=True)
-
-        async with self.store_lock:
-            removed = self.store.remove_birthday(interaction.user.id)
-
-        if not removed:
-            await self._send_message(
-                interaction,
-                "Bạn chưa set ngày sinh.",
-                ephemeral=True,
-            )
-            return
-
-        await self._send_message(
-            interaction,
-            "Đã xóa ngày sinh.",
-            ephemeral=True,
-        )
-
-    @birthday.command(name="info", description="Xem ngày sinh hiện tại của bạn và kênh thông báo.")
+    @app_commands.command(name="birthday_info", description="Xem ngay sinh cua ban va kenh thong bao.")
     async def birthday_info(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             await self._send_message(
                 interaction,
-                "Lệnh này chỉ được dùng trong server tấu hài cùng Bo Béo.",
+                "Lenh nay chi duoc dung trong server.",
                 ephemeral=True,
             )
             return
@@ -181,17 +147,17 @@ class Birthday(commands.Cog):
         birthday_text = (
             format_birthday(int(birthday["day"]), int(birthday["month"]))
             if birthday else
-            "Chưa đặt"
+            "Chua dat"
         )
-        channel_text = f"<#{channel_id}>" if channel_id else "Chưa set"
+        channel_text = f"<#{channel_id}>" if channel_id else "Chua dat"
 
         embed = discord.Embed(
-            title="Thông tin sinh nhật",
+            title="Thong tin sinh nhat",
             color=discord.Color.blurple(),
         )
-        embed.add_field(name="Ngày sinh nhật của bạn", value=birthday_text, inline=True)
-        embed.add_field(name="Kênh thông báo", value=channel_text, inline=True)
-        embed.add_field(name="Bộ nhớ", value="Ngày sinh được lưu theo user và sẽ reset lại sau khi bot restart.", inline=False)
+        embed.add_field(name="Ngay sinh cua ban", value=birthday_text, inline=True)
+        embed.add_field(name="Kenh thong bao", value=channel_text, inline=True)
+        embed.add_field(name="Bo nho", value="Ngay sinh duoc luu theo user va giu lai sau khi bot restart.", inline=False)
         embed.set_footer(
             text=f"Yeu cau boi {interaction.user}",
             icon_url=interaction.user.display_avatar.url,
@@ -199,10 +165,39 @@ class Birthday(commands.Cog):
 
         await self._send_message(interaction, embed=embed, ephemeral=True)
 
-    @birthday.command(name="channel", description="Set kênh gửi thông báo sinh nhật.")
+    @app_commands.command(name="birthday_remove", description="Xoa ngay sinh da luu cua ban.")
+    async def birthday_remove(self, interaction: discord.Interaction) -> None:
+        if interaction.guild is None:
+            await self._send_message(
+                interaction,
+                "Lenh nay chi duoc dung trong server.",
+                ephemeral=True,
+            )
+            return
+
+        await self._safe_defer(interaction, ephemeral=True)
+
+        async with self.store_lock:
+            removed = self.store.remove_birthday(interaction.user.id)
+
+        if not removed:
+            await self._send_message(
+                interaction,
+                "Ban chua set ngay sinh.",
+                ephemeral=True,
+            )
+            return
+
+        await self._send_message(
+            interaction,
+            "Da xoa ngay sinh.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(name="birthday_channel", description="Set kenh gui thong bao sinh nhat.")
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
-    @app_commands.describe(channel="Kênh nhận thông báo sinh nhật")
+    @app_commands.describe(channel="Kenh nhan thong bao sinh nhat")
     async def birthday_channel(
         self,
         interaction: discord.Interaction,
@@ -211,7 +206,7 @@ class Birthday(commands.Cog):
         if interaction.guild is None:
             await self._send_message(
                 interaction,
-                "Lệnh này chỉ được dùng trong server Tấu hài cùng Bo Béo.",
+                "Lenh nay chi duoc dung trong server.",
                 ephemeral=True,
             )
             return
@@ -228,10 +223,7 @@ class Birthday(commands.Cog):
             if missing_permissions:
                 await self._send_message(
                     interaction,
-                    (
-                        f"Bot chưa đủ quyền {channel.mention}: "
-                        f"{', '.join(missing_permissions)}."
-                    ),
+                    f"Bot chua du quyen trong {channel.mention}: {', '.join(missing_permissions)}.",
                     ephemeral=True,
                 )
                 return
@@ -245,11 +237,10 @@ class Birthday(commands.Cog):
         async with self.store_lock:
             self.store.set_announcement_channel(interaction.guild.id, channel.id)
 
-        message = f"Đã set kênh thông báo cho kênh {channel.mention}."
+        message = f"Da set kenh thong bao sinh nhat thanh {channel.mention}."
         if mention_everyone_warning:
             message += (
-                "\nLưu ý: bot chưa có quyền: `Mention Everyone`,"
-                "sẽ không set được khi bot bị thiếu người."
+                "\nLuu y: bot chua co quyen `Mention Everyone`, nen `@everyone` co the se khong ping duoc."
             )
 
         await self._send_message(interaction, message, ephemeral=True)
@@ -307,22 +298,21 @@ class Birthday(commands.Cog):
         embed = discord.Embed(
             title="Happy Birthday!",
             description=(
-                f"Chúc mừng sinh nhật <@{notice.user_id}>!\n"
-                "Chúc bạn có 1 sinh nhật thật nhiều niềm vui và may mắn."
+                f"Chuc mung sinh nhat <@{notice.user_id}>!\n"
+                "Chuc ban co mot ngay that vui, nhieu qua va nhieu may man."
             ),
             color=discord.Color.gold(),
         )
-        embed.add_field(name="Ngày sinh", value=format_birthday(notice.day, notice.month), inline=True)
+        embed.add_field(name="Ngay sinh", value=format_birthday(notice.day, notice.month), inline=True)
         embed.add_field(name="Server", value=guild.name, inline=True)
-        embed.set_footer(text=f"Sinh nhật năm {today.year}")
+        embed.set_footer(text=f"Sinh nhat nam {today.year}")
 
-        if member is not None:
-            embed.set_author(name=str(member), icon_url=member.display_avatar.url)
-            embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
+        embed.set_thumbnail(url=member.display_avatar.url)
 
         try:
             await channel.send(
-                content=f"@everyone Hôm nay là sinh nhật <@{notice.user_id}>!",
+                content=f"@everyone Hom nay la sinh nhat cua <@{notice.user_id}>!",
                 embed=embed,
                 allowed_mentions=discord.AllowedMentions(
                     everyone=True,
