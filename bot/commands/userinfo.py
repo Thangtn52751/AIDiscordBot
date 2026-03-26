@@ -21,14 +21,12 @@ class UserInfo(commands.Cog):
 
         member = member or interaction.user
 
-        # 🧠 Format time đẹp hơn
         created_at = discord.utils.format_dt(member.created_at, style="F")
         joined_at = (
             discord.utils.format_dt(member.joined_at, style="F")
             if member.joined_at else "Không rõ"
         )
 
-        # 🎭 Badge đơn giản
         badges = []
         if member.bot:
             badges.append("🤖 Bot")
@@ -40,10 +38,8 @@ class UserInfo(commands.Cog):
 
         badge_text = " • ".join(badges)
 
-        # 🎨 Color theo role cao nhất
         color = member.top_role.color if member.top_role.color.value != 0 else discord.Color.blurple()
 
-        # 🎭 Roles
         roles = [role.mention for role in member.roles if role.name != "@everyone"]
         roles_text = self._format_roles(roles)
 
@@ -53,7 +49,6 @@ class UserInfo(commands.Cog):
             color=color,
         )
 
-        # 🖼️ Avatar + banner
         embed.set_thumbnail(url=member.display_avatar.url)
 
         try:
@@ -63,7 +58,6 @@ class UserInfo(commands.Cog):
         except:
             pass
 
-        # 📊 Thông tin chính
         embed.add_field(
             name="📌 Thông tin cơ bản",
             value=(
@@ -82,14 +76,12 @@ class UserInfo(commands.Cog):
             inline=True,
         )
 
-        # 🎭 Role
         embed.add_field(
             name=f"🎭 Roles ({len(roles)})",
             value=roles_text,
             inline=False,
         )
 
-        # 🏆 Role cao nhất
         embed.add_field(
             name="🏆 Role cao nhất",
             value=member.top_role.mention,

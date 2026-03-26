@@ -3,7 +3,8 @@ import os
 import traceback
 
 import discord
-from ai.llm_client import ask_ai, ask_ai_with_image
+from ai.llm_client import ask_ai
+from ai.llm_client import ask_ai_with_image
 from bot.paths import COMMANDS_DIR, PERSONALITY_PATH, PROJECT_ROOT
 from bot.user_context import build_message_context, load_user_profiles
 from discord import app_commands
@@ -45,19 +46,19 @@ class BoBeoBot(commands.Bot):
                 self.tree.copy_global_to(guild=guild)
                 synced = await self.tree.sync(guild=guild)
                 print(
-                    f"Đã đồng bộ {len(synced)} slash command cho guild {self.guild_id}: "
+                    f"Synced {len(synced)} guild slash commands to {self.guild_id}: "
                     f"{[cmd.name for cmd in synced]}"
                 )
                 return
             except discord.Forbidden:
                 print(
-                    "Thiếu quyền khi đồng bộ slash command cho guild. "
-                    f"Hãy kiểm tra DISCORD_GUILD_ID={self.guild_id}, xác nhận bot đang ở trong server đó "
-                    "và mời lại bot với scope `bot` + `applications.commands`."
+                    "Missing access while syncing guild slash commands. "
+                    f"Check DISCORD_GUILD_ID={self.guild_id}, confirm the bot is in that server, "
+                    "and re-invite it with bot + applications.commands scopes."
                 )
 
         synced = await self.tree.sync()
-        print(f"Đã đồng bộ {len(synced)} global slash command: {[cmd.name for cmd in synced]}")
+        print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
 
     async def on_app_command_error(
         self,
@@ -65,14 +66,17 @@ class BoBeoBot(commands.Bot):
         error: app_commands.AppCommandError,
     ) -> None:
         command_name = interaction.command.qualified_name if interaction.command else "unknown"
-        print(f"Lỗi slash command /{command_name}: {error}")
+        print(f"Slash command error in /{command_name}: {error}")
         traceback.print_exception(type(error), error, error.__traceback__)
 
         if self._should_suppress_interaction_error(interaction, error):
-            print("Đã bỏ qua thông báo lỗi vì interaction đã được phản hồi trước đó.")
+            print(
+                "Slash error notification suppressed because the interaction "
+                "was already acknowledged elsewhere."
+            )
             return
 
-        message = "Bot đang xử lý, bạn thử lại giúp mình nhé."
+        message = "Đang tính."
         try:
             if interaction.response.is_done():
                 await interaction.followup.send(message, ephemeral=True)
@@ -82,11 +86,11 @@ class BoBeoBot(commands.Bot):
             error_code = getattr(notify_error, "code", None)
             if error_code in {10062, 40060}:
                 print(
-                    "Bỏ qua phản hồi lỗi vì interaction không còn hợp lệ "
+                    "Slash error response skipped because interaction is no longer valid "
                     f"(code={error_code})."
                 )
                 return
-            print(f"Không gửi được thông báo lỗi slash command: {notify_error}")
+            print(f"Failed to send slash error response: {notify_error}")
 
     @staticmethod
     def _extract_error_code(error: BaseException) -> int | None:
@@ -141,10 +145,10 @@ bot = BoBeoBot()
 
 @bot.event
 async def on_ready():
-    print(f"Bot đã đăng nhập với tên {bot.user} (pid={os.getpid()})")
+    print(f"Bot logged in as {bot.user} (pid={os.getpid()})")
     invite_url = bot.get_invite_url()
     if invite_url:
-        print(f"Link mời bot: {invite_url}")
+        print(f"Invite URL: {invite_url}")
 
 
 @bot.event
@@ -184,8 +188,8 @@ async def on_message(message):
             await message.channel.send(response)
 
         except Exception as error:
-            print("Lỗi AI:", error)
-            await message.channel.send("Đã xảy ra lỗi khi gọi AI.")
+            print("ERROR:", error)
+            await message.channel.send("AI error occurred.")
 
     await bot.process_commands(message)
 
