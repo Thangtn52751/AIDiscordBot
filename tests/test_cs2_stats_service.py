@@ -119,6 +119,51 @@ class CS2StatsServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(stats["leetify"]["leetify_rating"], "1.23")
         self.assertEqual(stats["steam_game_stats"]["kd"], "1.25")
 
+    async def test_get_stats_handles_missing_faceit_profile(self) -> None:
+        steam_player = {
+            "personaname": "No Faceit",
+            "avatarfull": "https://example.com/avatar.png",
+            "profileurl": "https://steamcommunity.com/profiles/76561198000000001",
+        }
+        leetify_player = {
+            "name": "No Faceit",
+            "profile_url": "https://leetify.com/app/profile/76561198000000001",
+            "leetify_rating": "N/A",
+            "aim": "N/A",
+            "positioning": "N/A",
+            "utility": "N/A",
+            "entrying": "N/A",
+            "status": "unavailable",
+            "status_message": "Khong co du lieu.",
+            "has_stats": False,
+        }
+
+        with patch(
+            "services.cs2_stats_service.FaceitService.get_player",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "services.cs2_stats_service.FaceitService.get_player_stats",
+            new=AsyncMock(),
+        ) as get_faceit_stats_mock, patch(
+            "services.cs2_stats_service.SteamService.get_player",
+            new=AsyncMock(return_value=steam_player),
+        ), patch(
+            "services.cs2_stats_service.SteamService.get_cs2_stats",
+            new=AsyncMock(return_value={}),
+        ), patch(
+            "services.cs2_stats_service.LeetifyService.get_player_stats",
+            new=AsyncMock(return_value=leetify_player),
+        ):
+            stats = await CS2StatsService.get_stats("76561198000000001")
+
+        get_faceit_stats_mock.assert_not_awaited()
+        self.assertEqual(stats["faceit_level"], "N/A")
+        self.assertEqual(stats["faceit_elo"], "N/A")
+        self.assertEqual(stats["faceit_name"], "N/A")
+        self.assertEqual(stats["matches"], "N/A")
+        self.assertEqual(stats["kd"], "N/A")
+        self.assertEqual(stats["name"], "No Faceit")
+
 
 if __name__ == "__main__":
     unittest.main()

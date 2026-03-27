@@ -46,9 +46,9 @@ class LeetifyService:
             profile_url=profile_url,
             status="unavailable",
             status_message=(
-                "Khong lay duoc du lieu cong khai tu Leetify. Them LEETIFY_API_KEY de goi API day du."
+                "Không lấy được dữ liệu từ Leetify. Thêm LEETIFY_API_KEY để gọi API đầy đủ."
                 if not has_api_key
-                else "Khong lay duoc du lieu tu Leetify API/profile cho tai khoan nay."
+                else "Không lấy được dữ liệu từ Leetify API/profile cho tài khoản này."
             ),
         )
 
@@ -138,7 +138,7 @@ class LeetifyService:
                 profile_url=profile_url,
                 status="rate_limited",
                 status_message=(
-                    "Leetify Public API dang rate limit. Them LEETIFY_API_KEY tai https://leetify.com/app/developer de tang gioi han."
+                    "Leetify Public API đang rate limit. Thêm LEETIFY_API_KEY tai https://leetify.com/app/developer để tăng giới hạn."
                 ),
             )
 
@@ -146,14 +146,14 @@ class LeetifyService:
             return LeetifyService._build_unavailable_profile(
                 profile_url=profile_url,
                 status="unauthorized",
-                status_message="LEETIFY_API_KEY khong hop le hoac da het han.",
+                status_message="LEETIFY_API_KEY không hợp lệ.",
             )
 
         if saw_not_found:
             return LeetifyService._build_unavailable_profile(
                 profile_url=profile_url,
                 status="not_registered",
-                status_message="Tai khoan nay chua dang ky Leetify hoac profile khong ton tai.",
+                status_message="Tài khoản này chưa đăng ký Leetify",
             )
 
         return None

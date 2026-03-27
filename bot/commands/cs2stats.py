@@ -117,55 +117,44 @@ class CS2StatsCommand(commands.Cog):
         try:
             steam_id = await CS2StatsService.extract_steam_id(steam_url)
             stats = await CS2StatsService.get_stats(steam_id)
-
-            leetify = stats.get("leetify") or {
-                "name": stats["name"],
-                "profile_url": f"https://leetify.com/app/profile/{steam_id}",
-                "leetify_rating": "N/A",
-                "aim": "N/A",
-                "positioning": "N/A",
-                "utility": "N/A",
-                "entrying": "N/A",
-                "premier_rank": "N/A",
-                "faceit_rank": "N/A",
-                "faceit_elo": "N/A",
-                "wingman_rank": "N/A",
-                "renown_rank": "N/A",
-                "status_message": "Khong lay duoc du lieu tu Leetify.",
-                "status": "unavailable",
-                "has_stats": False,
-            }
+            csstats_context = self._build_csstats_context(steam_id, stats)
+            leetify = csstats_context["leetify"]
 
             embed = discord.Embed(
-                title=f"🧠 Player stats | {leetify.get('name')}",
+                title=f"🧠 Player stats | {csstats_context['player_name']}",
                 url=leetify["profile_url"],
                 description=(
                     f"🆔 `{steam_id}`\n"
+                    f"🔗 [Leetify Profile]({leetify['profile_url']})"
                 ),
-                color=discord.Color.blurple(),
+                color=csstats_context["color"],
             )
 
             if stats.get("avatar"):
                 embed.set_thumbnail(url=stats["avatar"])
 
-            embed.add_field(
-                name="📊 PERFORMANCE",
-                value=(
-                    f"Rating: **{leetify.get('leetify_rating', 'N/A')}**\n"
-                    f"🎯 Aim: `{leetify.get('aim', 'N/A')}`\n"
-                    f"📍 Positioning: `{leetify.get('positioning', 'N/A')}`\n"
-                    f"💣 Utility: `{leetify.get('utility', 'N/A')}`\n"
-                    f"🚪 Entry: `{leetify.get('entrying', 'N/A')}`"
-                ),
-                inline=False,
-            )
+            if csstats_context["has_leetify_stats"]:
+                embed.add_field(
+                    name="📊 PERFORMANCE",
+                    value=(
+                        f"Rating: **{leetify.get('leetify_rating', 'N/A')}**\n"
+                        f"🎯 Aim: `{leetify.get('aim', 'N/A')}`\n"
+                        f"📍 Positioning: `{leetify.get('positioning', 'N/A')}`\n"
+                        f"💣 Utility: `{leetify.get('utility', 'N/A')}`\n"
+                        f"🚪 Entry: `{leetify.get('entrying', 'N/A')}`"
+                    ),
+                    inline=False,
+                )
+            else:
+                embed.add_field(
+                    name="ℹ️ LEETIFY STATUS",
+                    value=csstats_context["status_message"],
+                    inline=False,
+                )
 
             embed.add_field(
                 name="🏆 RANK",
-                value=(
-                    f"🚀 Premier: `{leetify.get('premier_rank', 'N/A')}`\n"
-                    f"🏅 Faceit: `{leetify.get('faceit_rank', 'N/A')}`\n"
-                ),
+                value=csstats_context["rank_value"],
                 inline=False,
             )
             steam_fallback = stats.get("steam_game_stats")
@@ -184,7 +173,7 @@ class CS2StatsCommand(commands.Cog):
                     inline=False,
                 )
 
-            embed.set_footer(text="⚡ Data from Leetify")
+            embed.set_footer(text=csstats_context["footer"])
             embed.timestamp = discord.utils.utcnow()
 
             await self._send_message(interaction, embed=embed)
@@ -274,6 +263,103 @@ class CS2StatsCommand(commands.Cog):
         if value == "N/A":
             return value
         return value if str(value).endswith("%") else f"{value}%"
+
+    @staticmethod
+    def _pick_display_value(*values, default: str = "N/A") -> str:
+        for value in values:
+            if value is None:
+                continue
+
+            text = str(value).strip()
+            if text and text not in {"N/A", "Unknown"}:
+                return text
+
+        return default
+
+    @classmethod
+    def _build_faceit_rank_fallback(cls, stats: dict) -> str:
+        level = cls._pick_display_value(stats.get("faceit_level"))
+        if level == "N/A":
+            return "N/A"
+
+        elo = cls._pick_display_value(stats.get("faceit_elo"))
+        if elo == "N/A":
+            return f"Level {level}"
+
+        return f"Level {level} ({elo} ELO)"
+
+    @classmethod
+    def _build_premier_rank_display(cls, leetify: dict) -> str:
+        premier_rank = cls._pick_display_value(leetify.get("premier_rank"))
+        if premier_rank != "N/A":
+            return premier_rank
+
+        status = str(leetify.get("status", "")).strip().lower()
+        if status == "not_registered":
+            return "Unavailable (Leetify not registered)"
+        if status == "private":
+            return "Unavailable (Leetify private)"
+        if status == "login_required":
+            return "Unavailable (Leetify login required)"
+        if status == "rate_limited":
+            return "Unavailable (Leetify rate limited)"
+
+        return "Unavailable"
+
+    @classmethod
+    def _build_csstats_context(cls, steam_id: str, stats: dict) -> dict:
+        raw_leetify = stats.get("leetify") or {}
+        leetify = {
+            "name": raw_leetify.get("name", "N/A"),
+            "profile_url": raw_leetify.get("profile_url")
+            or f"https://leetify.com/app/profile/{steam_id}",
+            "leetify_rating": raw_leetify.get("leetify_rating", "N/A"),
+            "aim": raw_leetify.get("aim", "N/A"),
+            "positioning": raw_leetify.get("positioning", "N/A"),
+            "utility": raw_leetify.get("utility", "N/A"),
+            "entrying": raw_leetify.get("entrying", "N/A"),
+            "premier_rank": raw_leetify.get("premier_rank", "N/A"),
+            "faceit_rank": raw_leetify.get("faceit_rank", "N/A"),
+            "status_message": raw_leetify.get("status_message")
+            or "Không lấy được dữ liệu từ Leetify.",
+            "status": raw_leetify.get("status", "unavailable"),
+            "has_stats": bool(raw_leetify.get("has_stats")),
+        }
+
+        has_leetify_stats = leetify["has_stats"]
+        player_name = cls._pick_display_value(
+            leetify.get("name"),
+            stats.get("name"),
+            stats.get("faceit_name"),
+            steam_id,
+            default="Unknown",
+        )
+        premier_rank = cls._build_premier_rank_display(leetify)
+        faceit_rank = cls._pick_display_value(
+            leetify.get("faceit_rank"),
+            cls._build_faceit_rank_fallback(stats),
+        )
+
+        return {
+            "leetify": leetify,
+            "player_name": player_name,
+            "has_leetify_stats": has_leetify_stats,
+            "status_message": leetify["status_message"],
+            "rank_value": (
+                f"🚀 Premier: `{premier_rank}`\n"
+                f"🏅 Faceit: `{faceit_rank}`\n"
+            ),
+            "color": (
+                discord.Color.blurple()
+                if has_leetify_stats
+                else discord.Color.orange()
+            ),
+            "footer": (
+                "⚡ Data from Leetify"
+                if has_leetify_stats
+                else "⚡ Leetify unavailable • showing Steam fallback"
+            ),
+        }
 
     @staticmethod
     def _get_level_color(level):

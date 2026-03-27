@@ -26,6 +26,21 @@ class FaceitService:
     BASE_URL = "https://open.faceit.com/data/v4"
 
     @staticmethod
+    def _default_faceit_stats() -> dict[str, str | None]:
+        return {
+            "player_id": None,
+            "level": "N/A",
+            "elo": "N/A",
+            "nickname": "N/A",
+            "matches": "N/A",
+            "winrate": "N/A",
+            "kd": "N/A",
+            "hs": "N/A",
+            "adr": "N/A",
+            "kast": "N/A",
+        }
+
+    @staticmethod
     def _headers() -> dict[str, str]:
         return {
             "Authorization": f"Bearer {os.getenv('FACEIT_API_KEY')}"
@@ -85,12 +100,13 @@ class FaceitService:
     @staticmethod
     def parse_faceit(data, stats_data=None):
         if not data:
-            return {}
+            return FaceitService._default_faceit_stats()
 
         cs2 = data.get("games", {}).get("cs2", {})
         lifetime = stats_data.get("lifetime", {}) if stats_data else {}
 
         return {
+            **FaceitService._default_faceit_stats(),
             "player_id": data.get("player_id"),
             "level": cs2.get("skill_level", "N/A"),
             "elo": cs2.get("faceit_elo", "N/A"),
