@@ -1,6 +1,8 @@
+import asyncio
 import re
 
 from services.faceit_service import FaceitService
+from services.leetify_service import LeetifyService
 from services.steam_service import SteamService
 
 
@@ -31,13 +33,35 @@ class CS2StatsService:
 
     @staticmethod
     async def get_stats(steam_id: str):
-        faceit_data = await FaceitService.get_player(steam_id)
+        faceit_task = FaceitService.get_player(steam_id)
+        steam_task = SteamService.get_player(steam_id)
+        steam_stats_task = SteamService.get_cs2_stats(steam_id)
+        leetify_task = LeetifyService.get_player_stats(steam_id)
+
+        faceit_data, steam_data, steam_game_stats, leetify_data = await asyncio.gather(
+            faceit_task,
+            steam_task,
+            steam_stats_task,
+            leetify_task,
+            return_exceptions=True,
+        )
+
+        if isinstance(faceit_data, Exception):
+            faceit_data = None
+        if isinstance(steam_data, Exception):
+            steam_data = None
+        if isinstance(steam_game_stats, Exception):
+            steam_game_stats = None
+        if isinstance(leetify_data, Exception):
+            leetify_data = None
+
         faceit_stats_data = None
-
         if faceit_data and faceit_data.get("player_id"):
-            faceit_stats_data = await FaceitService.get_player_stats(faceit_data["player_id"])
+            try:
+                faceit_stats_data = await FaceitService.get_player_stats(faceit_data["player_id"])
+            except Exception:
+                pass
 
-        steam_data = await SteamService.get_player(steam_id)
         faceit = FaceitService.parse_faceit(faceit_data, faceit_stats_data)
 
         return {
@@ -54,4 +78,6 @@ class CS2StatsService:
             "hs": faceit["hs"],
             "adr": faceit.get("adr", "N/A"),
             "kast": faceit.get("kast", "N/A"),
+            "leetify": leetify_data or {},
+            "steam_game_stats": steam_game_stats or {},
         }

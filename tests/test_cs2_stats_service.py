@@ -65,6 +65,29 @@ class CS2StatsServiceTests(unittest.IsolatedAsyncioTestCase):
             "avatarfull": "https://example.com/avatar.png",
             "profileurl": "https://steamcommunity.com/profiles/76561198000000000",
         }
+        steam_game_stats = {
+            "kills": "1000",
+            "deaths": "800",
+            "wins": "300",
+            "mvps": "120",
+            "damage": "150000",
+            "kd": "1.25",
+            "hs_percent": "45.0",
+            "hours_played": "250.0",
+            "source": "steam_official",
+        }
+        leetify_player = {
+            "name": "ADR",
+            "profile_url": "https://leetify.com/app/profile/76561198000000000",
+            "leetify_rating": "1.23",
+            "aim": "72.1",
+            "positioning": "61.4",
+            "utility": "55.0",
+            "entrying": "49.8",
+            "status": "ok",
+            "status_message": "Da lay du lieu tu Leetify.",
+            "has_stats": True,
+        }
 
         with patch(
             "services.cs2_stats_service.FaceitService.get_player",
@@ -75,6 +98,12 @@ class CS2StatsServiceTests(unittest.IsolatedAsyncioTestCase):
         ), patch(
             "services.cs2_stats_service.SteamService.get_player",
             new=AsyncMock(return_value=steam_player),
+        ), patch(
+            "services.cs2_stats_service.SteamService.get_cs2_stats",
+            new=AsyncMock(return_value=steam_game_stats),
+        ), patch(
+            "services.cs2_stats_service.LeetifyService.get_player_stats",
+            new=AsyncMock(return_value=leetify_player),
         ):
             stats = await CS2StatsService.get_stats("76561198000000000")
 
@@ -87,6 +116,8 @@ class CS2StatsServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(stats["adr"], "82.4")
         self.assertEqual(stats["kast"], "71")
         self.assertEqual(stats["faceit_name"], "faceit-nick")
+        self.assertEqual(stats["leetify"]["leetify_rating"], "1.23")
+        self.assertEqual(stats["steam_game_stats"]["kd"], "1.25")
 
 
 if __name__ == "__main__":
