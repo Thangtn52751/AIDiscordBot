@@ -39,14 +39,14 @@ class BoBeoBot(commands.Bot):
     
     async def setup_hook(self) -> None:
         await load_commands(self)
-    try:
-        synced = await self.tree.sync()
-        print(
-            f"[SYNC] Synced {len(synced)} global commands: "
-            f"{[cmd.name for cmd in synced]}"
-        )
-    except Exception as e:
-        print(f"[SYNC ERROR] {e}")
+        try:
+            synced = await self.tree.sync()
+            print(
+                f"[SYNC] Synced {len(synced)} global commands: "
+                f"{[cmd.name for cmd in synced]}"
+            )
+        except Exception as e:
+            print(f"[SYNC ERROR] {e}")
         
     async def on_app_command_error(
         self,
