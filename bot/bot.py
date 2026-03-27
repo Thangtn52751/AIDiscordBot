@@ -40,25 +40,24 @@ class BoBeoBot(commands.Bot):
     async def setup_hook(self) -> None:
         await load_commands(self)
 
+        synced = await self.tree.sync()
+        print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
+
         if self.guild_id:
             guild = discord.Object(id=int(self.guild_id))
             try:
                 self.tree.copy_global_to(guild=guild)
-                synced = await self.tree.sync(guild=guild)
+                guild_synced = await self.tree.sync(guild=guild)
                 print(
-                    f"Synced {len(synced)} guild slash commands to {self.guild_id}: "
-                    f"{[cmd.name for cmd in synced]}"
+                    f"Synced {len(guild_synced)} guild slash commands to {self.guild_id}: "
+                    f"{[cmd.name for cmd in guild_synced]}"
                 )
-                return
             except discord.Forbidden:
                 print(
                     "Missing access while syncing guild slash commands. "
                     f"Check DISCORD_GUILD_ID={self.guild_id}, confirm the bot is in that server, "
                     "and re-invite it with bot + applications.commands scopes."
                 )
-
-        synced = await self.tree.sync()
-        print(f"Synced {len(synced)} global slash commands: {[cmd.name for cmd in synced]}")
 
     async def on_app_command_error(
         self,
