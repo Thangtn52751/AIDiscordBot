@@ -84,7 +84,7 @@ class CS2StatsCommand(commands.Cog):
 
     @app_commands.command(
         name="cs2history",
-        description="Xem 5 match gan nhat Faceit",
+        description="Xem 5 trận Faceit gần nhất",
     )
     async def cs2history(self, interaction: discord.Interaction, steam_url: str):
         await self._safe_defer(interaction)
@@ -96,7 +96,7 @@ class CS2StatsCommand(commands.Cog):
             if not player:
                 return await self._send_message(
                     interaction,
-                    "❌ Khong tim thay player tren Faceit",
+                    "❌ Không tìm thấy player",
                     ephemeral=True,
                 )
 
@@ -106,24 +106,42 @@ class CS2StatsCommand(commands.Cog):
             if not items:
                 return await self._send_message(
                     interaction,
-                    "❌ Khong co lich su tran dau",
+                    "❌ Không có lịch sử trận đấu",
                     ephemeral=True,
                 )
 
             embed = discord.Embed(
-                title="🎮 Match History (5 gan nhat)",
+                title="🎮 Match History (5 game gần nhất)",
                 color=discord.Color.blurple(),
             )
 
             for match in items:
                 finished = match.get("finished_at", "N/A")
-                winner = match.get("results", {}).get("winner", "N/A")
+                winner = match.get("results", {}).get("winner")
+                teams = match.get("teams", {})
+                
+                status = "N/A"
+                
+                try:
+                    for team_name, team_data in teams.items():
+                        players = team_data.get("players", [])
+                        
+                        for p in players:
+                            if p.get("player_id") == player["player_id"]:
+                                if team_name == winner:
+                                    status = "W"
+                                else:
+                                    status = "L"
+                                break
+                except:
+                    status = "N/A"
+                
 
                 embed.add_field(
                     name=f"🗺 {match.get('game_mode', 'CS2')}",
                     value=(
                         f"📅 {finished}\n"
-                        f"🏆 Winner: `{winner}`"
+                        f"📊 Match Status: `{status}`"
                     ),
                     inline=False,
                 )
@@ -136,7 +154,7 @@ class CS2StatsCommand(commands.Cog):
         except Exception as e:
             await self._send_message(
                 interaction,
-                f"❌ Loi: {e}",
+                f"❌ Lỗi: {e}",
                 ephemeral=True,
             )
 

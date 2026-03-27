@@ -45,6 +45,17 @@ class HelpCommand(commands.Cog):
             ),
             inline=False,
         )
+        
+        embed.add_field(
+            name="🔫 Faceit",
+            value=(
+                "```yaml\n"
+                "/cs2stats   : Xem thông tin Faceit của 1 profile\n"
+                "/cs2history : Xem lịch sử 5 trận gần nhất của user\n"
+                "```"
+            ),
+            inline=False,
+        )
 
         embed.add_field(
             name="🎂 Sinh nhật",
