@@ -103,13 +103,13 @@ class CS2StatsCommand(commands.Cog):
         except Exception as error:
             await self._send_message(
                 interaction,
-                f"❌ Loi: {error}",
+                f"❌ Lỗi: {error}",
                 ephemeral=True,
             )
 
     @app_commands.command(
         name="csstats",
-        description="Xem thong so tu Leetify",
+        description="Xem thông số từ Leetify",
     )
     async def csstats(self, interaction: discord.Interaction, steam_url: str):
         await self._safe_defer(interaction)
@@ -193,7 +193,7 @@ class CS2StatsCommand(commands.Cog):
             traceback.print_exc()
             await self._send_message(
                 interaction,
-                f"❌ Loi: {error}",
+                f"❌ Lỗi: {error}",
                 ephemeral=True,
             )
 
@@ -265,7 +265,7 @@ class CS2StatsCommand(commands.Cog):
         except Exception as error:
             await self._send_message(
                 interaction,
-                f"❌ Loi: {error}",
+                f"❌ Lỗi: {error}",
                 ephemeral=True,
             )
 

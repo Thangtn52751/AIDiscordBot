@@ -50,7 +50,8 @@ class HelpCommand(commands.Cog):
             name="🔫 Faceit",
             value=(
                 "```yaml\n"
-                "/cs2stats   : Xem thông tin Faceit của 1 profile\n"
+                "/faceitstats: Xem stats Faceit\n"
+                "/csstats    : Xem stats Profile"
                 "/cs2history : Xem lịch sử 5 trận gần nhất của user\n"
                 "```"
             ),
