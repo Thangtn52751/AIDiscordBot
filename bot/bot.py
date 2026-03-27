@@ -36,10 +36,9 @@ class BoBeoBot(commands.Bot):
         self.personality = PERSONALITY_PATH.read_text(encoding="utf-8")
         self.user_profiles = load_user_profiles()
         self.guild_id = os.getenv("DISCORD_GUILD_ID")
-
-async def setup_hook(self) -> None:
-    await load_commands(self)
-
+    
+    async def setup_hook(self) -> None:
+        await load_commands(self)
     try:
         synced = await self.tree.sync()
         print(
@@ -48,7 +47,7 @@ async def setup_hook(self) -> None:
         )
     except Exception as e:
         print(f"[SYNC ERROR] {e}")
-
+        
     async def on_app_command_error(
         self,
         interaction: discord.Interaction,
