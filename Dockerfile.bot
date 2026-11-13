@@ -8,7 +8,7 @@ COPY bot ./bot
 COPY core ./core
 COPY services ./services
 COPY tools ./tools
-COPY data ./data
+COPY data/user_profiles.json ./data/user_profiles.json
 COPY assets ./assets
 COPY main.py ./
 CMD ["python", "main.py"]

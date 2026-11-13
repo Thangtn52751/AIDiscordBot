@@ -58,19 +58,6 @@ class HelpCommand(commands.Cog):
         )
 
         embed.add_field(
-            name="🎂 Sinh nhật",
-            value=(
-                "```yaml\n"
-                "/birthday           : Đặt ngày sinh\n"
-                "/birthday_info      : Xem thông tin\n"
-                "/birthday_remove    : Xóa ngày sinh\n"
-                "/birthday_channel   : Đặt kênh thông báo\n"
-                "```"
-            ),
-            inline=False,
-        )
-
-        embed.add_field(
             name="🎮 Giải trí",
             value=(
                 "```yaml\n"
