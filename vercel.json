@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "mkdir -p .vercel-static",
+  "buildCommand": "python scripts/build_static.py",
   "outputDirectory": ".vercel-static",
   "daemons": {
     "discord-bot": {

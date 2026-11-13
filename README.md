@@ -18,7 +18,7 @@ Giữ personality trong `bot/personality.txt` và hồ sơ trong `data/user_prof
 
 ## Deploy Vercel Daemons
 
-Project dùng [Vercel Daemons](https://vercel.com/docs/daemons) duy trì Discord Gateway. Không cần Interactions Endpoint URL hoặc HTTP function. Deployment không có trang web; kiểm tra qua Discord và logs daemon.
+Project dùng [Vercel Daemons](https://vercel.com/docs/daemons) duy trì Discord Gateway. Không cần Interactions Endpoint URL hoặc HTTP function. Deployment có trang thông tin tĩnh; trạng thái bot cần kiểm tra qua Discord và logs daemon.
 
 1. Import repository vào Vercel. Root Directory là thư mục chứa `vercel.json` và `Dockerfile.bot` (repo này là `AIDiscordBot`). Framework chọn **Other**, dùng build/output từ `vercel.json`.
 2. Tạo Redis có lưu trữ bền vững, lấy URL TCP/TLS `rediss://...`, không dùng REST URL. Chọn chính sách không tự loại bỏ key nếu nhà cung cấp cho phép.
@@ -27,6 +27,8 @@ Project dùng [Vercel Daemons](https://vercel.com/docs/daemons) duy trì Discord
 5. Dừng bot Railway/local cũ để tránh trả lời trùng. Nếu Railway có sinh nhật mới hơn repo, sao lưu và chuyển bản mới nhất vào `data/birthdays.json` trước lần dùng Redis đầu tiên.
 6. Deploy **Production**, hoặc chạy `npx vercel@latest --prod` từ thư mục project sau khi liên kết tài khoản. Daemons chỉ chạy Production, không chạy trong Preview hoặc `vercel dev`.
 7. Trong logs `discord-bot`, kiểm tra đăng nhập và đồng bộ slash commands. Thử mention, gửi ảnh và `/birthday_info`.
+
+Lệnh build `python scripts/build_static.py` tạo `.vercel-static/index.html` để thư mục đầu ra có nội dung. Nếu gặp `STATIC_BUILD_EMPTY_OUT_DIR`, kiểm tra Vercel đang dùng commit mới và không ghi đè Build Command thành lệnh `mkdir` cũ trong Project Settings. Output Directory giữ là `.vercel-static`.
 
 Một instance chạy tại Singapore (`sin1`). Redis lưu sinh nhật và khóa để các phiên bản cập nhật không cùng nhận tin nhắn. Khi mất khóa, tiến trình đóng Discord. Không dùng chung Redis giữa các bot độc lập vì khóa Gateway dùng tên `aidiscordbot:gateway:leader`.
 
