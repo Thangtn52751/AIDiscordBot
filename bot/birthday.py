@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta, timezone, tzinfo
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from bot.paths import BIRTHDAYS_PATH
@@ -13,6 +13,8 @@ from bot.paths import BIRTHDAYS_PATH
 
 DEFAULT_BIRTHDAY_TIMEZONE = "Asia/Bangkok"
 DEFAULT_BIRTHDAY_UTC_OFFSET = timezone(timedelta(hours=7), name=DEFAULT_BIRTHDAY_TIMEZONE)
+DEFAULT_REDIS_KEY = "aidiscordbot:birthdays:v1"
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -162,10 +164,10 @@ def _normalize_birthday_store(raw_data: object) -> dict[str, dict[str, Any]]:
     if not isinstance(raw_data, dict):
         return {"users": {}, "guilds": {}}
 
+    raw_guilds = raw_data.get("guilds", {})
     if "users" in raw_data or any(
         isinstance(entry, dict) and "announced_years" in entry
-        for entry in raw_data.get("guilds", {}).values()
-        if isinstance(raw_data.get("guilds", {}), dict)
+        for entry in (raw_guilds.values() if isinstance(raw_guilds, dict) else ())
     ):
         return {
             "users": _normalize_user_birthdays(raw_data.get("users", {})),
@@ -199,21 +201,97 @@ def save_birthday_store(
 
 
 class BirthdayStore:
+    """JSON locally, or a durable Redis document with optimistic transactions.
+
+    Redis is seeded only if the key does not exist. Every update re-reads the
+    latest document under WATCH, so simultaneous bot processes cannot overwrite
+    unrelated users, channels, or announcement marks with an old snapshot.
+    """
+
     def __init__(self, path: Path = BIRTHDAYS_PATH) -> None:
         self.path = path
-        self.data = load_birthday_store(path)
-        self._log_storage_path()
+        self._redis = None
+        self._redis_key = os.getenv("BIRTHDAY_REDIS_KEY", DEFAULT_REDIS_KEY)
+        redis_url = os.getenv("REDIS_URL", "").strip()
+        hosted = os.getenv("BOT_HOST", "").lower() == "vercel" or bool(
+            os.getenv("VERCEL_DEPLOYMENT_ID")
+        )
+        if not redis_url and hosted:
+            raise RuntimeError(
+                "Cần REDIS_URL để lưu sinh nhật trên Vercel; ổ đĩa daemon không lưu dữ liệu lâu dài."
+            )
+
+        if redis_url:
+            from redis import Redis
+            from redis.backoff import NoBackoff
+            from redis.retry import Retry
+
+            self._redis = Redis.from_url(
+                redis_url,
+                decode_responses=True,
+                socket_connect_timeout=3,
+                socket_timeout=3,
+                retry=Retry(NoBackoff(), 0),
+                retry_on_timeout=False,
+            )
+            # SET NX makes first-boot migration safe even during overlapping
+            # deployments. An existing (even empty) database always wins.
+            self._redis.set(
+                self._redis_key,
+                json.dumps(load_birthday_store(path), ensure_ascii=True),
+                nx=True,
+            )
+            self.data = self._decode_redis(self._redis.get(self._redis_key))
+            print("[birthday] lưu trữ bền vững: Redis")
+        else:
+            self.data = load_birthday_store(path)
+            print(f"[birthday] lưu trữ JSON local: {self.path.resolve()}")
 
     def save(self) -> None:
+        if self._redis is not None:
+            raise RuntimeError("Dùng các phương thức cập nhật BirthdayStore để ghi Redis nguyên tử.")
         save_birthday_store(self.data, self.path)
 
-    def _log_storage_path(self) -> None:
-        resolved_path = self.path.resolve()
-        running_on_railway = bool(os.getenv("RAILWAY_PROJECT_ID"))
-        print(
-            "[birthday] đường dẫn lưu trữ: "
-            f"{resolved_path} | tồn tại={self.path.exists()} | railway={running_on_railway}"
-        )
+    @staticmethod
+    def _decode_redis(raw: str | bytes | None) -> dict[str, dict[str, Any]]:
+        if raw is None:
+            # Do not silently reseed a key that disappeared at runtime: that
+            # could resurrect deleted birthdays from an old deployment image.
+            raise RuntimeError("Không tìm thấy dữ liệu sinh nhật trong Redis.")
+        try:
+            data = json.loads(raw)
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise RuntimeError("Dữ liệu sinh nhật trong Redis không hợp lệ.") from error
+        if not isinstance(data, dict) or not isinstance(data.get("users"), dict) or not isinstance(data.get("guilds"), dict):
+            raise RuntimeError("Cấu trúc dữ liệu sinh nhật trong Redis không hợp lệ.")
+        return _normalize_birthday_store(data)
+
+    def _refresh(self) -> None:
+        if self._redis is not None:
+            self.data = self._decode_redis(self._redis.get(self._redis_key))
+
+    def _update(self, change: Callable[[dict[str, dict[str, Any]]], T]) -> T:
+        if self._redis is None:
+            result = change(self.data)
+            self.save()
+            return result
+
+        from redis.exceptions import WatchError
+
+        for _attempt in range(5):
+            try:
+                with self._redis.pipeline() as transaction:
+                    transaction.watch(self._redis_key)
+                    data = self._decode_redis(transaction.get(self._redis_key))
+                    result = change(data)
+                    transaction.multi()
+                    transaction.set(self._redis_key, json.dumps(data, ensure_ascii=True))
+                    transaction.execute()
+                self.data = data
+                return result
+            except WatchError:
+                continue
+        raise RuntimeError("Dữ liệu sinh nhật đang bận, vui lòng thử lại.")
 
     def _get_or_create_user(self, user_id: int | str) -> dict[str, int] | None:
         users = self.data.setdefault("users", {})
@@ -225,8 +303,9 @@ class BirthdayStore:
             return birthday
         return None
 
-    def _get_or_create_guild(self, guild_id: int | str) -> dict[str, Any]:
-        guilds = self.data.setdefault("guilds", {})
+    @staticmethod
+    def _get_or_create_guild(data: dict[str, dict[str, Any]], guild_id: int | str) -> dict[str, Any]:
+        guilds = data.setdefault("guilds", {})
         guild_key = str(guild_id)
         guild = guilds.get(guild_key)
         if not isinstance(guild, dict):
@@ -243,9 +322,10 @@ class BirthdayStore:
 
         return guild
 
-    def _clear_announcement_marks_for_user(self, user_id: int | str) -> None:
+    @staticmethod
+    def _clear_announcement_marks_for_user(data: dict[str, dict[str, Any]], user_id: int | str) -> None:
         user_key = str(user_id)
-        guilds = self.data.get("guilds", {})
+        guilds = data.get("guilds", {})
         if not isinstance(guilds, dict):
             return
 
@@ -260,51 +340,52 @@ class BirthdayStore:
         if not is_valid_birthday(day, month):
             raise ValueError("Ngày sinh không hợp lệ.")
 
-        users = self.data.setdefault("users", {})
-        user_key = str(user_id)
-        previous_birthday = users.get(user_key)
-        date_changed = not (
-            isinstance(previous_birthday, dict)
-            and previous_birthday.get("day") == day
-            and previous_birthday.get("month") == month
-        )
+        def change(data: dict[str, dict[str, Any]]) -> bool:
+            users = data.setdefault("users", {})
+            user_key = str(user_id)
+            previous_birthday = users.get(user_key)
+            date_changed = not (
+                isinstance(previous_birthday, dict)
+                and previous_birthday.get("day") == day
+                and previous_birthday.get("month") == month
+            )
+            users[user_key] = {"day": day, "month": month}
+            if date_changed:
+                self._clear_announcement_marks_for_user(data, user_id)
+            return date_changed
 
-        users[user_key] = {
-            "day": day,
-            "month": month,
-        }
-
-        if date_changed:
-            self._clear_announcement_marks_for_user(user_id)
-
-        self.save()
-        return date_changed
+        return self._update(change)
 
     def remove_birthday(self, user_id: int) -> bool:
-        users = self.data.setdefault("users", {})
-        removed = users.pop(str(user_id), None)
-        if removed is None:
-            return False
+        def change(data: dict[str, dict[str, Any]]) -> bool:
+            removed = data.setdefault("users", {}).pop(str(user_id), None)
+            if removed is None:
+                return False
+            self._clear_announcement_marks_for_user(data, user_id)
+            return True
 
-        self._clear_announcement_marks_for_user(user_id)
-        self.save()
-        return True
+        return self._update(change)
 
     def set_announcement_channel(self, guild_id: int, channel_id: int) -> None:
-        guild = self._get_or_create_guild(guild_id)
-        guild["announcement_channel_id"] = int(channel_id)
-        self.save()
+        def change(data: dict[str, dict[str, Any]]) -> None:
+            guild = self._get_or_create_guild(data, guild_id)
+            guild["announcement_channel_id"] = int(channel_id)
+
+        self._update(change)
 
     def get_announcement_channel_id(self, guild_id: int) -> int | None:
-        guild = self._get_or_create_guild(guild_id)
+        self._refresh()
+        guild = self._get_or_create_guild(self.data, guild_id)
         channel_id = guild.get("announcement_channel_id")
         return channel_id if isinstance(channel_id, int) else None
 
     def get_birthday(self, user_id: int) -> dict[str, int] | None:
+        self._refresh()
         return self._get_or_create_user(user_id)
 
     def get_last_announced_year(self, guild_id: int, user_id: int) -> int | None:
-        guild = self._get_or_create_guild(guild_id)
+        self._refresh()
+        guild = self._get_or_create_guild(self.data, guild_id)
         announced_years = guild.get("announced_years")
         if not isinstance(announced_years, dict):
             return None
@@ -313,6 +394,7 @@ class BirthdayStore:
         return year if isinstance(year, int) else None
 
     def due_birthdays(self, today: date) -> list[BirthdayNotice]:
+        self._refresh()
         notices: list[BirthdayNotice] = []
         users = self.data.get("users", {})
         guilds = self.data.get("guilds", {})
@@ -358,7 +440,8 @@ class BirthdayStore:
         return notices
 
     def mark_announced(self, guild_id: int | str, user_id: int | str, year: int) -> None:
-        guild = self._get_or_create_guild(guild_id)
-        announced_years = guild["announced_years"]
-        announced_years[str(user_id)] = int(year)
-        self.save()
+        def change(data: dict[str, dict[str, Any]]) -> None:
+            guild = self._get_or_create_guild(data, guild_id)
+            guild["announced_years"][str(user_id)] = int(year)
+
+        self._update(change)

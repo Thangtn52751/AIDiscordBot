@@ -173,7 +173,8 @@ async def on_message(message):
                         user_context,
                     )
 
-            await message.channel.send(response)
+            for offset in range(0, len(response), 2000):
+                await message.channel.send(response[offset:offset + 2000])
 
         except Exception as error:
             print("ERROR:", error)

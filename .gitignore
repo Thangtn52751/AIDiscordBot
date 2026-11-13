@@ -5,10 +5,17 @@ __pycache__/
 
 # Virtual Environment
 venv/
+.venv/
 .env/
 
 # Environment file
 .env
+.env.*
+!.env.example
+.vercel/
+.vercel-static/
+.uv-cache/
+.bot.lock
 
 
 # Logs

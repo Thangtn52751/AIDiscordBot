@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "mkdir -p .vercel-static",
+  "outputDirectory": ".vercel-static",
+  "daemons": {
+    "discord-bot": {
+      "root": ".",
+      "entrypoint": "Dockerfile.bot",
+      "instances": { "sin1": 1 },
+      "resources": { "requests": { "memory": "1Gi" } },
+      "terminationGracePeriodSeconds": 30
+    }
+  }
+}

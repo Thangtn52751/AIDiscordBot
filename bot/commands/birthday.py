@@ -7,6 +7,7 @@ import discord
 from bot.birthday import BirthdayNotice, BirthdayStore, current_birthday_date, format_birthday, is_valid_birthday
 from discord import app_commands
 from discord.ext import commands, tasks
+from redis.exceptions import RedisError
 
 
 class Birthday(commands.Cog):
@@ -14,6 +15,7 @@ class Birthday(commands.Cog):
         self.bot = bot
         self.store = BirthdayStore()
         self.store_lock = asyncio.Lock()
+        self.birthday_checker.add_exception_type(RedisError)
         self.birthday_checker.start()
 
     def cog_unload(self) -> None:
@@ -67,13 +69,13 @@ class Birthday(commands.Cog):
         announced_immediately = False
 
         async with self.store_lock:
-            previous_birthday = self.store.get_birthday(interaction.user.id)
-            previous_last_announced_year = self.store.get_last_announced_year(
+            previous_birthday = await asyncio.to_thread(self.store.get_birthday, interaction.user.id)
+            previous_last_announced_year = await asyncio.to_thread(self.store.get_last_announced_year,
                 interaction.guild.id,
                 interaction.user.id,
             )
-            self.store.set_birthday(interaction.user.id, day, month)
-            channel_id = self.store.get_announcement_channel_id(interaction.guild.id)
+            await asyncio.to_thread(self.store.set_birthday, interaction.user.id, day, month)
+            channel_id = await asyncio.to_thread(self.store.get_announcement_channel_id, interaction.guild.id)
 
         should_announce_now = (
             channel_id is not None
@@ -98,9 +100,9 @@ class Birthday(commands.Cog):
             announced_immediately = await self._send_birthday_announcement(notice, today)
             if announced_immediately:
                 async with self.store_lock:
-                    birthday = self.store.get_birthday(interaction.user.id)
+                    birthday = await asyncio.to_thread(self.store.get_birthday, interaction.user.id)
                     if birthday is not None and birthday.get("day") == day and birthday.get("month") == month:
-                        self.store.mark_announced(interaction.guild.id, interaction.user.id, today.year)
+                        await asyncio.to_thread(self.store.mark_announced, interaction.guild.id, interaction.user.id, today.year)
 
         if channel_id is None:
             channel_text = (
@@ -141,8 +143,8 @@ class Birthday(commands.Cog):
         await self._safe_defer(interaction, ephemeral=True)
 
         async with self.store_lock:
-            birthday = self.store.get_birthday(interaction.user.id)
-            channel_id = self.store.get_announcement_channel_id(interaction.guild.id)
+            birthday = await asyncio.to_thread(self.store.get_birthday, interaction.user.id)
+            channel_id = await asyncio.to_thread(self.store.get_announcement_channel_id, interaction.guild.id)
 
         birthday_text = (
             format_birthday(int(birthday["day"]), int(birthday["month"]))
@@ -178,7 +180,7 @@ class Birthday(commands.Cog):
         await self._safe_defer(interaction, ephemeral=True)
 
         async with self.store_lock:
-            removed = self.store.remove_birthday(interaction.user.id)
+            removed = await asyncio.to_thread(self.store.remove_birthday, interaction.user.id)
 
         if not removed:
             await self._send_message(
@@ -235,7 +237,7 @@ class Birthday(commands.Cog):
         await self._safe_defer(interaction, ephemeral=True)
 
         async with self.store_lock:
-            self.store.set_announcement_channel(interaction.guild.id, channel.id)
+            await asyncio.to_thread(self.store.set_announcement_channel, interaction.guild.id, channel.id)
 
         message = f"Đã set kênh thông báo sinh nhật thành {channel.mention}."
         if mention_everyone_warning:
@@ -250,7 +252,7 @@ class Birthday(commands.Cog):
         today = current_birthday_date()
 
         async with self.store_lock:
-            due_birthdays = self.store.due_birthdays(today)
+            due_birthdays = await asyncio.to_thread(self.store.due_birthdays, today)
 
         for notice in due_birthdays:
             sent = await self._send_birthday_announcement(notice, today)
@@ -258,12 +260,12 @@ class Birthday(commands.Cog):
                 continue
 
             async with self.store_lock:
-                birthday = self.store.get_birthday(int(notice.user_id))
+                birthday = await asyncio.to_thread(self.store.get_birthday, int(notice.user_id))
                 if birthday is None:
                     continue
                 if birthday.get("day") != notice.day or birthday.get("month") != notice.month:
                     continue
-                self.store.mark_announced(notice.guild_id, notice.user_id, today.year)
+                await asyncio.to_thread(self.store.mark_announced, notice.guild_id, notice.user_id, today.year)
 
     @birthday_checker.before_loop
     async def before_birthday_checker(self) -> None:

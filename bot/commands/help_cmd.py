@@ -51,7 +51,6 @@ class HelpCommand(commands.Cog):
             value=(
                 "```yaml\n"
                 "/faceitstats: Xem stats Faceit\n"
-                "/csstats    : Xem stats Profile"
                 "/cs2history : Xem lịch sử 5 trận gần nhất của user\n"
                 "```"
             ),

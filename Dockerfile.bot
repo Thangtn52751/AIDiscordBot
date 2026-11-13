@@ -1,0 +1,14 @@
+FROM python:3.12-slim
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 BOT_HOST=vercel
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY ai ./ai
+COPY bot ./bot
+COPY core ./core
+COPY services ./services
+COPY tools ./tools
+COPY data ./data
+COPY assets ./assets
+COPY main.py ./
+CMD ["python", "main.py"]

@@ -18,7 +18,7 @@ class CountdownTests(unittest.TestCase):
         event = resolve_event("Tet")
 
         self.assertIsNotNone(event)
-        self.assertEqual(event.name, "Tet")
+        self.assertEqual(event.name, "Tết")
 
     def test_build_countdown_uses_next_tet_date(self) -> None:
         result = build_countdown("Tet", today=date(2026, 3, 24))

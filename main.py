@@ -1,4 +1,5 @@
 import atexit
+import asyncio
 import ctypes
 import os
 import sys
@@ -11,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv(PROJECT_ROOT / ".env")
 
-from bot.bot import bot
+from core.daemon import run_bot
 
 
 MUTEX_NAME = "Local\\BoBeoDSBotMain"
@@ -79,12 +80,13 @@ def release_single_instance_lock() -> None:
     LOCK_FILE_HANDLE = None
 
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-if not TOKEN:
-    raise RuntimeError("Thiếu biến môi trường DISCORD_TOKEN")
-
-
 def main() -> None:
+    token = os.getenv("DISCORD_TOKEN", "").strip()
+    if not token or not os.getenv("GEMINI_API_KEY", "").strip():
+        raise RuntimeError("Cần cấu hình DISCORD_TOKEN và GEMINI_API_KEY.")
+    if os.getenv("BOT_HOST") == "vercel" and not os.getenv("REDIS_URL", "").strip():
+        raise RuntimeError("Cần REDIS_URL để chạy bot trên Vercel.")
+    from bot.bot import bot
     if os.getenv(CHILD_GUARD_ENV) == "1":
         print("Phát hiện tiến trình bot đang bị lặp. Đang thoát...")
         sys.exit(0)
@@ -93,7 +95,14 @@ def main() -> None:
     acquire_single_instance_lock()
     atexit.register(release_single_instance_lock)
     print(f"Bot đang khởi động... pid={os.getpid()}")
-    bot.run(TOKEN)
+    import discord
+    discord.utils.setup_logging()
+    try:
+        asyncio.run(run_bot(bot, token, os.getenv("REDIS_URL", "").strip()))
+    except KeyboardInterrupt:
+        pass
+    finally:
+        release_single_instance_lock()
 
 
 if __name__ == "__main__":
